@@ -19,7 +19,12 @@ function pipsFor(items) {
   );
 }
 
-function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) {
+function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill,
+                   filter, onFilter, statusFilter, onStatus, onClear }) {
+  const pick = (key) => onFilter(filter === key ? "all" : key);
+  const cls = (base, key) => base + (filter === key ? " active" : "");
+  const STATUSES = [["all", "All"], ["unpaid", "Unpaid"], ["over", "Overdue"], ["paid", "Paid"]];
+  const filtered = filter !== "all" || statusFilter !== "all";
   const cardT = Ds.totals("Card");
   const utilT = Ds.totals("Utility");
   const subT  = Ds.totals("Subscription");
@@ -122,17 +127,19 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
       <section className="sb-cats">
         <div className="sb-label">
           <span>Categories</span>
-          <span className="aside">filter</span>
+          {filtered
+            ? <button type="button" className="sb-clear aside" onClick={onClear}>clear</button>
+            : <span className="aside">filter</span>}
         </div>
         <ul>
-          <li className="c-all active">
+          <li className={cls("c-all", "all")} onClick={() => onFilter("all")}>
             <span className="dot"></span>
             <span className="name">All</span>
             <span className="ct">{allItems.length}</span>
             {pipsFor(allItems)}
           </li>
           {sections.cards && (
-            <li className="c-cards">
+            <li className={cls("c-cards", "cards")} onClick={() => pick("cards")}>
               <span className="dot"></span>
               <span className="name">Cards</span>
               <span className="ct">{cardT.items.length}</span>
@@ -140,7 +147,7 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
             </li>
           )}
           {sections.utilities && (
-            <li className="c-utils">
+            <li className={cls("c-utils", "utilities")} onClick={() => pick("utilities")}>
               <span className="dot"></span>
               <span className="name">Utilities</span>
               <span className="ct">{utilT.items.length}</span>
@@ -148,7 +155,7 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
             </li>
           )}
           {sections.subs && (
-            <li className="c-subs">
+            <li className={cls("c-subs", "subs")} onClick={() => pick("subs")}>
               <span className="dot"></span>
               <span className="name">Subscriptions</span>
               <span className="ct">{subT.items.length}</span>
@@ -156,7 +163,7 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
             </li>
           )}
           {sections.loans && (
-            <li className="c-loans">
+            <li className={cls("c-loans", "loans")} onClick={() => pick("loans")}>
               <span className="dot"></span>
               <span className="name">Loans</span>
               <span className="ct">{Ds.LOANS.length}</span>
@@ -164,7 +171,7 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
             </li>
           )}
           {sections.meters && (
-            <li className="c-meter">
+            <li className={cls("c-meter", "meters")} onClick={() => pick("meters")}>
               <span className="dot"></span>
               <span className="name">Meters</span>
               <span className="ct">{Ds.METERS.length}</span>
@@ -172,6 +179,17 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
             </li>
           )}
         </ul>
+        {filter !== "loans" && filter !== "meters" && (
+          <div className="sb-status">
+            {STATUSES.map(([v, label]) => (
+              <button key={v} type="button"
+                className={"sb-status-opt" + (statusFilter === v ? " on" : "")}
+                onClick={() => onStatus(statusFilter === v ? "all" : v)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       {showTrend && (

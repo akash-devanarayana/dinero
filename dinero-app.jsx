@@ -38,6 +38,8 @@ function App() {
   const [isPreview, setIsPreview] = useStateA(false);
   const [, forceRender] = useStateA(0);
   const [searchOpen, setSearchOpen] = useStateA(false);
+  const [filter, setFilter] = useStateA("all");
+  const [statusFilter, setStatusFilter] = useStateA("all");
   const [theme, setTheme] = useStateA(() =>
     document.documentElement.getAttribute("data-theme")
     || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
@@ -169,6 +171,30 @@ function App() {
   const utilT = DA.totals("Utility");
   const subT  = DA.totals("Subscription");
 
+  // ── filters ───────────────────────────────────────────────
+  // category filter picks which sections show; status filter narrows bill rows.
+  const setCategory = (key) => {
+    setFilter(key);
+    if (key === "loans" || key === "meters") setStatusFilter("all"); // status doesn't apply
+  };
+  const matchStatus = (s) =>
+    statusFilter === "all" ? true
+    : statusFilter === "paid" ? s === "paid"
+    : statusFilter === "over" ? s === "over"
+    : statusFilter === "unpaid" ? (s === "due" || s === "over")
+    : true;
+  const cardF = cardT.items.filter((i) => matchStatus(i.status));
+  const utilF = utilT.items.filter((i) => matchStatus(i.status));
+  const subF  = subT.items.filter((i) => matchStatus(i.status));
+
+  const catAllows = (key) => filter === "all" || filter === key;
+  const showBill  = (key, items) => sections[key] && catAllows(key) && (statusFilter === "all" || items.length > 0);
+  const showOther = (key) => sections[key] && catAllows(key) && statusFilter === "all";
+  const showNotes = t.showNotes && filter === "all" && statusFilter === "all";
+  const anyVisible = showBill("cards", cardF) || showBill("utilities", utilF) || showBill("subs", subF)
+    || showOther("meters") || showOther("loans") || showNotes;
+  const clearFilters = () => { setFilter("all"); setStatusFilter("all"); };
+
   const ModalEntry = openKind && window.MODAL_MAP[openKind];
 
   return (
@@ -198,60 +224,72 @@ function App() {
         showMonthBar={t.showMonthBar}
         showOverdue={t.showOverdue}
         onAddBill={openModal}
+        filter={filter}
+        onFilter={setCategory}
+        statusFilter={statusFilter}
+        onStatus={setStatusFilter}
+        onClear={clearFilters}
       />
 
       <main className="main" data-screen-label="Dashboard">
         {t.showWeek && <WeekStrip days={t.weekDays} />}
 
-        <div className="main-cols">
-          <div>
-            {t.showCards && (
-              <BillSection
-                title="Cards"
-                subtitle={`${cardT.items.length} cards`}
-                kind="card"
-                items={cardT.items}
-                totalsLine={{ label: "Total outstanding", value: DA.fmtInt(cardT.owed) }}
-                onEdit={editModal}
-                onMarkPaid={handleMarkPaid}
-                onAdd={() => openModal("card")}
-              />
-            )}
-            {t.showUtilities && (
-              <BillSection
-                title="Utilities"
-                subtitle={`${utilT.items.length} bills`}
-                kind="utility"
-                items={utilT.items}
-                totalsLine={{
-                  label: "Outstanding · Paid",
-                  value: <>{DA.fmtInt(utilT.owed)} <span className="muted">· </span><span className="accent">{DA.fmtInt(utilT.paid)}</span></>
-                }}
-                onEdit={editModal}
-                onMarkPaid={handleMarkPaid}
-                onAdd={() => openModal("utility")}
-              />
-            )}
-            {t.showSubs && (
-              <BillSection
-                title="Subscriptions"
-                subtitle={`${subT.items.length} recurring`}
-                kind="subscription"
-                items={subT.items}
-                totalsLine={{ label: "Monthly total", value: DA.fmtInt(subT.total) }}
-                onEdit={editModal}
-                onMarkPaid={handleMarkPaid}
-                onAdd={() => openModal("subscription")}
-              />
-            )}
-          </div>
+        {anyVisible ? (
+          <div className="main-cols">
+            <div>
+              {showBill("cards", cardF) && (
+                <BillSection
+                  title="Cards"
+                  subtitle={`${cardF.length} cards`}
+                  kind="card"
+                  items={cardF}
+                  totalsLine={{ label: "Total outstanding", value: DA.fmtInt(cardT.owed) }}
+                  onEdit={editModal}
+                  onMarkPaid={handleMarkPaid}
+                  onAdd={() => openModal("card")}
+                />
+              )}
+              {showBill("utilities", utilF) && (
+                <BillSection
+                  title="Utilities"
+                  subtitle={`${utilF.length} bills`}
+                  kind="utility"
+                  items={utilF}
+                  totalsLine={{
+                    label: "Outstanding · Paid",
+                    value: <>{DA.fmtInt(utilT.owed)} <span className="muted">· </span><span className="accent">{DA.fmtInt(utilT.paid)}</span></>
+                  }}
+                  onEdit={editModal}
+                  onMarkPaid={handleMarkPaid}
+                  onAdd={() => openModal("utility")}
+                />
+              )}
+              {showBill("subs", subF) && (
+                <BillSection
+                  title="Subscriptions"
+                  subtitle={`${subF.length} recurring`}
+                  kind="subscription"
+                  items={subF}
+                  totalsLine={{ label: "Monthly total", value: DA.fmtInt(subT.total) }}
+                  onEdit={editModal}
+                  onMarkPaid={handleMarkPaid}
+                  onAdd={() => openModal("subscription")}
+                />
+              )}
+            </div>
 
-          <div>
-            {t.showMeters && <MetersSection onEdit={editModal} onAdd={() => openModal("meter")} />}
-            {t.showLoans  && <LoansSection  onEdit={editModal} onAdd={() => openModal("loan")} />}
-            {t.showNotes  && <NotesSection />}
+            <div>
+              {showOther("meters") && <MetersSection onEdit={editModal} onAdd={() => openModal("meter")} />}
+              {showOther("loans")  && <LoansSection  onEdit={editModal} onAdd={() => openModal("loan")} />}
+              {showNotes && <NotesSection />}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="filter-empty">
+            <div>No items match this filter.</div>
+            <button className="btn btn-ghost" type="button" onClick={clearFilters}>Clear filters</button>
+          </div>
+        )}
       </main>
 
       <div className="foot">Dinero · personal expense tracker · {DA.monthName} {DA.yearStr}</div>
