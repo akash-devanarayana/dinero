@@ -136,6 +136,19 @@ const store = {
     await this.load(this.period);
   },
 
+  // search across every month (server-side)
+  async search(q) {
+    const r = await this._json("/api/search?q=" + encodeURIComponent(q));
+    return r.results || [];
+  },
+
+  // find a freshly-loaded record by id in the current month
+  findRecord(kind, id) {
+    if (kind === "meter") return this.METERS.find((m) => m.id === id);
+    if (kind === "loan") return this.LOANS.find((l) => l.id === id);
+    return this.ITEMS.find((i) => i.id === id);
+  },
+
   async _refreshMonthsIfNeeded() {
     if (!this.months.find((x) => x.period === this.period)) {
       const m = await this._json("/api/months");

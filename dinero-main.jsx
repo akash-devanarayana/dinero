@@ -285,4 +285,207 @@ function formatDateShort(iso) {
   return d.toLocaleString("en", { month: "short", day: "numeric" });
 }
 
-Object.assign(window, { Pill, SectionCard, RowActions, WeekStrip, BillSection, MetersSection, LoansSection, NotesSection });
+// ─── Search palette (⌘K) ───────────────────────────────
+const SEARCH_GROUPS = [
+  { type: "Card",         label: "Cards" },
+  { type: "Utility",      label: "Utilities" },
+  { type: "Subscription", label: "Subscriptions" },
+  { type: "Loan",         label: "Loans" },
+  { type: "Meter",        label: "Meters" },
+  { type: "Note",         label: "Notes" },
+];
+
+// A short month chip like "Mar 26".
+function monthChip(monthName, year) {
+  return `${String(monthName).slice(0, 3)} ${String(year).slice(-2)}`;
+}
+
+// Entry builders — shared by current-month (local) and all-months (remote) search
+// so both render identically. `record` is the API-shaped object the modals expect.
+function billEntry(i, period, monthLabel) {
+  const D = window.DINERO;
+  return {
+    type: i.cat, kind: i.cat === "Card" ? "card" : i.cat === "Utility" ? "utility" : "subscription",
+    record: i, name: i.name, status: i.status, amount: i.amount, period, monthLabel,
+    sub: [i.min ? "min " + D.fmtInt(i.min) : null, i.due ? "due " + formatDateShort(i.due) : null,
+          "via " + (i.paidVia || "—"), i.paidOn ? "paid " + formatDateShort(i.paidOn) : null]
+          .filter(Boolean).join(" · "),
+    hay: [i.name, i.cat, (D.STATUS_LABEL[i.status] || ""), i.paidVia, String(i.amount)].join(" ").toLowerCase(),
+  };
+}
+function loanEntry(l, period, monthLabel) {
+  return {
+    type: "Loan", kind: "loan", record: l, name: l.name,
+    status: "paid", statusText: l.status, amount: l.amount, period, monthLabel,
+    sub: l.status === "done" ? "settled" : "ongoing",
+    hay: [l.name, "loan", l.status, String(l.amount)].join(" ").toLowerCase(),
+  };
+}
+function meterEntry(m, period, monthLabel) {
+  return {
+    type: "Meter", kind: "meter", record: m, name: m.name, status: null, amount: null, period, monthLabel,
+    sub: `${m.last}${m.unit} · prev ${m.prev}${m.unit}`,
+    hay: [m.name, "meter", String(m.last)].join(" ").toLowerCase(),
+  };
+}
+function noteEntry(n, period, monthLabel) {
+  return {
+    type: "Note", kind: "note", record: n, name: n.body, status: null, amount: null, period, monthLabel,
+    sub: "note", hay: (n.body || "").toLowerCase(),
+  };
+}
+
+// Flatten the currently-loaded month into entries (instant, no network).
+function currentMonthEntries() {
+  const D = window.DINERO;
+  const label = monthChip(D.monthName, D.yearStr);
+  const out = [];
+  (D.ITEMS || []).forEach((i) => out.push(billEntry(i, D.period, label)));
+  (D.LOANS || []).forEach((l) => out.push(loanEntry(l, D.period, label)));
+  (D.METERS || []).forEach((m) => out.push(meterEntry(m, D.period, label)));
+  (D.NOTES || []).forEach((n) => out.push(noteEntry(n, D.period, label)));
+  return out;
+}
+
+// Convert a /api/search result row into a display entry.
+function entryFromResult(res) {
+  const { type, period, monthLabel, record } = res;
+  if (type === "Loan") return loanEntry(record, period, monthLabel);
+  if (type === "Meter") return meterEntry(record, period, monthLabel);
+  if (type === "Note") return noteEntry(record, period, monthLabel);
+  return billEntry(record, period, monthLabel);
+}
+
+// Wrap every case-insensitive occurrence of q in <mark>.
+function highlightMatch(text, q) {
+  text = String(text == null ? "" : text);
+  if (!q) return text;
+  const lower = text.toLowerCase(), ql = q.toLowerCase();
+  const parts = []; let from = 0, pos;
+  while ((pos = lower.indexOf(ql, from)) !== -1) {
+    if (pos > from) parts.push(text.slice(from, pos));
+    parts.push(<mark key={pos} className="search-hl">{text.slice(pos, pos + ql.length)}</mark>);
+    from = pos + ql.length;
+  }
+  parts.push(text.slice(from));
+  return parts;
+}
+
+function SearchPalette({ onClose, onPick }) {
+  const [q, setQ] = React.useState("");
+  const [scope, setScope] = React.useState("all");   // "all" | "month"
+  const [remote, setRemote] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [sel, setSel] = React.useState(0);
+  const resultsRef = React.useRef(null);
+  const D = window.DINERO;
+  const ql = q.trim().toLowerCase();
+
+  // all-months search hits the backend (debounced); current-month is local/instant
+  React.useEffect(() => {
+    if (scope !== "all") return;
+    if (!ql) { setRemote([]); setLoading(false); return; }
+    setLoading(true);
+    let cancelled = false;
+    const t = setTimeout(() => {
+      D.search(q.trim())
+        .then((r) => { if (!cancelled) setRemote(r); })
+        .catch(() => { if (!cancelled) setRemote([]); })
+        .then(() => { if (!cancelled) setLoading(false); });
+    }, 180);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q, scope]);
+
+  let entries;
+  if (scope === "month") {
+    const local = currentMonthEntries();
+    entries = ql ? local.filter((e) => e.hay.includes(ql)) : local;
+  } else {
+    entries = remote.map(entryFromResult);
+  }
+
+  const groups = SEARCH_GROUPS
+    .map((g) => ({ ...g, rows: entries.filter((m) => m.type === g.type) }))
+    .filter((g) => g.rows.length > 0);
+  const flat = groups.reduce((a, g) => a.concat(g.rows), []);
+
+  React.useEffect(() => { setSel(0); }, [q, scope, remote]);
+  React.useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+  React.useEffect(() => {
+    const el = resultsRef.current && resultsRef.current.querySelector(".search-row.on");
+    if (el) el.scrollIntoView({ block: "nearest" });
+  }, [sel]);
+
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") { e.preventDefault(); onClose(); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(flat.length - 1, s + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(0, s - 1)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (flat[sel]) onPick(flat[sel]); }
+  };
+
+  let running = -1;
+  return (
+    <div className="search-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="search-palette" role="dialog" aria-modal="true" aria-label="Search">
+        <div className="search-head">
+          <span className="search-ic"><IconN.Search /></span>
+          <input className="search-input" autoFocus value={q}
+            placeholder={scope === "all" ? "Search every month…" : "Search this month…"}
+            onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} />
+          <div className="seg search-scope">
+            <button type="button" className={"opt" + (scope === "month" ? " on" : "")}
+              onClick={() => setScope("month")}>This month</button>
+            <button type="button" className={"opt" + (scope === "all" ? " on" : "")}
+              onClick={() => setScope("all")}>All months</button>
+          </div>
+        </div>
+
+        <div className="search-results" ref={resultsRef}>
+          {flat.length === 0 && (
+            <div className="search-empty">
+              {scope === "all" && !ql ? "Type to search across all months."
+                : loading ? "Searching…"
+                : ql ? `No matches for “${q}”.`
+                : "Nothing in this month yet."}
+            </div>
+          )}
+          {groups.map((g) => (
+            <div className="search-group" key={g.type}>
+              <div className="search-group-lbl">{g.label}</div>
+              {g.rows.map((row) => {
+                running += 1;
+                const idx = running;
+                return (
+                  <button key={row.kind + "-" + row.record.id}
+                    className={"search-row" + (idx === sel ? " on" : "")} type="button"
+                    onMouseEnter={() => setSel(idx)} onClick={() => onPick(row)}>
+                    <span className="search-row-main">
+                      <span className="search-row-name">{highlightMatch(row.name, q)}</span>
+                      <span className="search-row-sub">{row.sub}</span>
+                    </span>
+                    <span className="search-row-pill">
+                      {row.status && <Pill status={row.status}>{row.statusText}</Pill>}
+                    </span>
+                    <span className="search-row-amt">{row.amount != null ? D.fmt(row.amount) : ""}</span>
+                    <span className="search-row-month">{row.monthLabel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <div className="search-foot">
+          <span><b>↵</b> open</span>
+          <span><b>↑↓</b> navigate</span>
+          <span><b>esc</b> close</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Pill, SectionCard, RowActions, WeekStrip, BillSection, MetersSection, LoansSection, NotesSection, SearchPalette });

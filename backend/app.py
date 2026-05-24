@@ -181,6 +181,60 @@ def get_month(period):
     })
 
 
+# ─── search across all months ────────────────────────────────────────────────
+SEARCH_LIMIT = 60
+_STATUS_HAY = {"paid": "paid", "due": "due", "over": "overdue", "na": "n/a"}
+_KIND_FOR = {"Card": "card", "Utility": "utility", "Subscription": "subscription"}
+
+
+def short_label(period):
+    y, m = parse_period(period)
+    return f"{MONTH_NAMES[m][:3]} {y % 100:02d}"
+
+
+@app.route("/api/search")
+def search():
+    q = (request.args.get("q") or "").strip().lower()
+    if not q:
+        return jsonify({"results": [], "total": 0})
+    conn = get_conn()
+    try:
+        readings = {(r["period"], r["name"]): r["reading"]
+                    for r in conn.execute("SELECT period, name, reading FROM meters")}
+        results = []
+
+        for r in conn.execute("SELECT * FROM bills"):
+            hay = " ".join([r["name"] or "", r["category"] or "", _STATUS_HAY.get(r["status"], ""),
+                            r["payment_method"] or "", str(r["amount"])]).lower()
+            if q in hay:
+                results.append({"type": r["category"], "kind": _KIND_FOR.get(r["category"], "card"),
+                                "period": r["period"], "monthLabel": short_label(r["period"]),
+                                "record": bill_to_json(r)})
+        for r in conn.execute("SELECT * FROM loans"):
+            hay = " ".join([r["name"] or "", "loan", r["status"] or "", str(r["amount"])]).lower()
+            if q in hay:
+                results.append({"type": "Loan", "kind": "loan",
+                                "period": r["period"], "monthLabel": short_label(r["period"]),
+                                "record": loan_to_json(r)})
+        for r in conn.execute("SELECT * FROM meters"):
+            hay = " ".join([r["name"] or "", "meter", str(r["reading"])]).lower()
+            if q in hay:
+                prev = readings.get((prev_period(r["period"]), r["name"]))
+                results.append({"type": "Meter", "kind": "meter",
+                                "period": r["period"], "monthLabel": short_label(r["period"]),
+                                "record": meter_to_json(r, prev)})
+        for r in conn.execute("SELECT * FROM notes"):
+            if q in (r["body"] or "").lower():
+                results.append({"type": "Note", "kind": "note",
+                                "period": r["period"], "monthLabel": short_label(r["period"]),
+                                "record": note_to_json(r)})
+    finally:
+        conn.close()
+
+    results.sort(key=lambda x: x["period"], reverse=True)  # most recent first
+    return jsonify({"results": results[:SEARCH_LIMIT], "total": len(results)})
+
+
 # ─── bills CRUD ───────────────────────────────────────────────────────────────
 def _bill_fields(data):
     return (
