@@ -53,6 +53,14 @@ CREATE TABLE IF NOT EXISTS months (
     period TEXT PRIMARY KEY
 );
 
+CREATE TABLE IF NOT EXISTS notes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    period      TEXT    NOT NULL,
+    body        TEXT    NOT NULL DEFAULT '',
+    sort_order  INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_notes_period ON notes(period);
+
 CREATE INDEX IF NOT EXISTS idx_bills_period  ON bills(period);
 CREATE INDEX IF NOT EXISTS idx_meters_period ON meters(period);
 CREATE INDEX IF NOT EXISTS idx_loans_period  ON loans(period);

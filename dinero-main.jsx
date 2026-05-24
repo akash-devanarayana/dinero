@@ -203,16 +203,77 @@ function LoansSection({ onEdit, onAdd }) {
   );
 }
 
-// ─── Notes section ─────────────────────────────────────
+// ─── Notes section (per-month, DB-backed) ──────────────
+function autoGrowNote(el) {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+
 function NotesSection() {
+  const [adding, setAdding] = React.useState(false);
+  const notes = DMain.NOTES || [];
+
+  const commitEdit = (note, value) => {
+    const body = value.trim();
+    if (body === note.body) return;          // unchanged
+    if (body === "") { DMain.deleteNote(note.id); return; }  // emptied → delete
+    DMain.saveNote(body, note.id);
+  };
+  const commitNew = (value) => {
+    setAdding(false);
+    const body = value.trim();
+    if (body !== "") DMain.saveNote(body, null);
+  };
+  const onKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.target.blur(); }
+    if (e.key === "Escape") { e.target.value = e.target.defaultValue; e.target.blur(); }
+  };
+
   return (
-    <SectionCard title="Notes" subtitle="scratch">
+    <SectionCard title="Notes" subtitle="this month">
       <div className="card-body">
         <div className="notes-list">
-          <div className="note">SLT bill keeps slipping past due — consider auto-pay.</div>
-          <div className="note">Starlink has been overdue twice this year already.</div>
-          <div className="note">Spotify went up Rs50 — still worth it?</div>
+          {notes.length === 0 && !adding && (
+            <div className="note note-empty">No notes yet — jot a reminder below.</div>
+          )}
+          {notes.map((n) => (
+            <div key={n.id} className="note-row">
+              <textarea
+                className="note note-edit"
+                defaultValue={n.body}
+                rows={1}
+                ref={autoGrowNote}
+                onInput={(e) => autoGrowNote(e.target)}
+                onBlur={(e) => commitEdit(n, e.target.value)}
+                onKeyDown={onKey}
+              />
+              <button className="note-del" type="button" title="Delete note" aria-label="Delete note"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => DMain.deleteNote(n.id)}>
+                <IconN.X />
+              </button>
+            </div>
+          ))}
+          {adding && (
+            <div className="note-row">
+              <textarea
+                className="note note-edit"
+                autoFocus
+                rows={1}
+                placeholder="Write a note…"
+                onInput={(e) => autoGrowNote(e.target)}
+                onBlur={(e) => commitNew(e.target.value)}
+                onKeyDown={onKey}
+              />
+            </div>
+          )}
         </div>
+      </div>
+      <div className="card-foot">
+        <button className="ghost-add" type="button" onClick={() => setAdding(true)}>
+          <IconN.Plus /> Add note
+        </button>
       </div>
     </SectionCard>
   );
