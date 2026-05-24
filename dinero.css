@@ -489,6 +489,37 @@ input, select, textarea { font-family: inherit; }
 .sb-cats li:last-child { border-bottom: 0; }
 .sb-cats li:hover { background: var(--surface-2); margin: 0 calc(-1 * var(--s-5)); padding-left: var(--s-5); padding-right: var(--s-5); border-color: transparent; }
 .sb-cats li.active .name { color: var(--ink); font-weight: 500; }
+.sb-cats li.active {
+  background: var(--accent-soft);
+  margin: 0 calc(-1 * var(--s-5));
+  padding-left: var(--s-5);
+  padding-right: var(--s-5);
+  border-color: transparent;
+}
+/* clear-filters link in the section header */
+.sb-clear {
+  border: 0; background: transparent; padding: 0; cursor: default;
+  font: inherit; color: var(--accent);
+}
+.sb-clear:hover { text-decoration: underline; }
+/* status filter chips */
+.sb-status { display: flex; gap: 4px; margin-top: 10px; }
+.sb-status-opt {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: default;
+  white-space: nowrap;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.sb-status-opt:hover { border-color: var(--line-strong); color: var(--ink-2); }
+.sb-status-opt.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
 .sb-cats .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
 .sb-cats li.c-all   .dot { background: var(--ink); }
 .sb-cats li.c-cards .dot { background: #6b7c93; }
@@ -932,6 +963,20 @@ input, select, textarea { font-family: inherit; }
 .note-del:hover { background: var(--over-soft); color: var(--over); }
 .note-del svg { width: 12px; height: 12px; }
 .note-empty { color: var(--ink-3); font-style: italic; border-left-color: transparent; }
+
+/* empty state when filters match nothing */
+.filter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-9) var(--s-6);
+  color: var(--ink-3);
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+}
 
 /* ─── Search palette (⌘K) ──────────────────────────────────── */
 .search-backdrop {
