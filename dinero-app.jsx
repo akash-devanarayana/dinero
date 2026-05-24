@@ -229,7 +229,7 @@ function App() {
             {theme === "dark" ? <IconA.Sun /> : <IconA.Moon />}
           </button>
           <button className="icon-btn" type="button" aria-label="Admin" title="Admin"
-            onClick={() => setView("admin")}><IconA.Settings /></button>
+            onClick={() => setView("admin")}><IconA.AdminUser /></button>
         </div>
       </header>
 
