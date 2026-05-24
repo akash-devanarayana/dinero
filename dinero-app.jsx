@@ -37,6 +37,7 @@ function App() {
   const [editingRecord, setEditingRecord] = useStateA(null);
   const [isPreview, setIsPreview] = useStateA(false);
   const [, forceRender] = useStateA(0);
+  const [searchOpen, setSearchOpen] = useStateA(false);
   const [theme, setTheme] = useStateA(() =>
     document.documentElement.getAttribute("data-theme")
     || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
@@ -53,6 +54,29 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem("dinero-theme", theme); } catch (e) {}
   }, [theme]);
+
+  // ⌘K / Ctrl-K (or "/") opens search
+  useEffectA(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault(); setSearchOpen(true);
+      } else if (e.key === "/" && !/^(input|textarea|select)$/i.test(e.target.tagName) && !e.target.isContentEditable) {
+        e.preventDefault(); setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleSearchPick = async (entry) => {
+    setSearchOpen(false);
+    if (entry.period && entry.period !== DA.period) {
+      await DA.load(entry.period);            // jump to the record's month
+    }
+    if (entry.kind === "note") return;        // note lives in that month's panel
+    const fresh = DA.findRecord(entry.kind, entry.record.id) || entry.record;
+    openModal(entry.kind, fresh);             // open the record's edit modal
+  };
 
   // accent + density (accent vars are theme-aware)
   useEffectA(() => {
@@ -157,7 +181,8 @@ function App() {
         </span>
         <span className="spacer"></span>
         <div className="head-actions">
-          <button className="icon-btn" type="button" aria-label="Search"><IconA.Search /></button>
+          <button className="icon-btn" type="button" aria-label="Search" title="Search (⌘K)"
+            onClick={() => setSearchOpen(true)}><IconA.Search /></button>
           <button className="icon-btn" type="button"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
@@ -230,6 +255,10 @@ function App() {
       </main>
 
       <div className="foot">Dinero · personal expense tracker · {DA.monthName} {DA.yearStr}</div>
+
+      {searchOpen && (
+        <SearchPalette onClose={() => setSearchOpen(false)} onPick={handleSearchPick} />
+      )}
 
       {ModalEntry && (
         <ModalEntry.Component
