@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install -r backend/requirements.txt ruff pytest
+      - name: Lint (real errors only)
+        run: ruff check backend --select E9,F63,F7,F82
+      - name: Tests
+        run: pytest -q
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install parser
+        run: npm install @babel/parser
+      - name: JSX parse check
+        run: node .github/scripts/check-jsx.js
+
+  guard:
+    name: guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No financial data files committed
+        run: |
+          if git ls-files | grep -qiE '\.(xlsx|db|sqlite)$'; then
+            echo "::error::A data file (.xlsx/.db/.sqlite) is tracked — keep it gitignored."
+            git ls-files | grep -iE '\.(xlsx|db|sqlite)$'
+            exit 1
+          fi
+          echo "No data files tracked."
