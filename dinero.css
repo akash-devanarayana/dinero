@@ -361,7 +361,7 @@ input, select, textarea { font-family: inherit; }
 .sb-month .nav.add-next:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 
 .sb-progress {
-  padding: 0 var(--s-5) var(--s-4);
+  padding: var(--s-4) var(--s-5) var(--s-4);
   border-bottom: 1px solid var(--line);
 }
 .sb-progress .track {
@@ -392,21 +392,23 @@ input, select, textarea { font-family: inherit; }
 
 /* hero outstanding */
 .sb-hero .big {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 52px;
-  line-height: 0.95;
-  letter-spacing: -0.015em;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: var(--over);
+  font-variant-numeric: tabular-nums;
 }
 .sb-hero .big .cur {
   font-family: var(--mono);
-  font-size: 16px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 500;
   color: var(--over);
-  vertical-align: 16px;
-  margin-right: 4px;
+  vertical-align: 8px;
+  margin-right: 5px;
   letter-spacing: 0;
 }
 .sb-hero .secondary {
@@ -441,7 +443,7 @@ input, select, textarea { font-family: inherit; }
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-3) var(--s-4);
-  margin: 0 var(--s-5) var(--s-5);
+  margin: var(--s-4) var(--s-5) var(--s-5);
   background: var(--over-soft);
   border-radius: var(--r-2);
   color: var(--over);
