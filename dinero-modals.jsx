@@ -264,10 +264,11 @@ function SubscriptionModal({ onClose, previewLabel, record, onSave, onDelete }) 
 
 // ─── Meter ────────────────────────────────────────────────────
 function MeterModal({ onClose, previewLabel, record, onSave, onDelete }) {
-  const editing = !!record;
+  // A record without an id is a "log this standard meter" preset → add mode.
+  const editing = !!(record && record.id);
   const [s, setS] = useStateM({
     kind:    record?.name    || "Electricity",
-    reading: record ? String(record.last || "") : "",
+    reading: editing ? String(record.last || "") : "",
     date:    "",
     unit:    record?.unit    || "kWh",
     note:    record?.note || "",
