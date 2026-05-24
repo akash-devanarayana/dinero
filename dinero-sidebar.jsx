@@ -55,7 +55,8 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
     progressRight = `${daysInMonth - today} day${plural(daysInMonth - today)} left`;
   }
 
-  const bars = [62, 58, 71, 49, 66, 73]; // mock 6 mo
+  const trend = Ds.trend || { months: [], average: 0, max: 0 };
+  const trendMax = trend.max || 1;
   const allItems = [...cardT.items, ...utilT.items, ...subT.items];
 
   const [menuOpen, setMenuOpen] = useStateS(false);
@@ -181,11 +182,17 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
           </div>
           <div className="sb-trend">
             <div className="spk">
-              {bars.map((b, i) => (
-                <i key={i} className={i === bars.length - 1 ? "now" : ""} style={{ height: b + "%" }}></i>
-              ))}
+              {trend.months.map((mo) => {
+                const h = mo.total > 0 ? Math.max(10, Math.round((mo.total / trendMax) * 100)) : 3;
+                return (
+                  <i key={mo.period}
+                     className={mo.period === Ds.period ? "now" : ""}
+                     style={{ height: h + "%" }}
+                     title={`${mo.label}: ${Ds.fmtInt(mo.total)}`}></i>
+                );
+              })}
             </div>
-            <div className="avg">avg<b>{Ds.fmtInt(64000)}</b></div>
+            <div className="avg">avg<b>{Ds.fmtInt(trend.average)}</b></div>
           </div>
         </section>
       )}

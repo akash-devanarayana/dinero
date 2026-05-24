@@ -179,6 +179,29 @@ def month_progress(period):
     return {"state": "current", "daysToStart": 0, "daysSinceEnd": 0}
 
 
+def build_trend(conn, period, window=6):
+    """Total billed (cards + utilities + subscriptions) for each of the `window`
+    months ending at `period`. Average is over months that actually have spend."""
+    totals = {r["period"]: (r["total"] or 0)
+              for r in conn.execute("SELECT period, SUM(amount) AS total FROM bills GROUP BY period")}
+    y, m = parse_period(period)
+    seq, cy, cm = [], y, m
+    for _ in range(window):
+        seq.append(f"{cy}-{cm:02d}")
+        cm -= 1
+        if cm == 0:
+            cm, cy = 12, cy - 1
+    seq.reverse()  # oldest -> newest
+    out = [{"period": p, "label": MONTH_NAMES[parse_period(p)[1]][:3],
+            "total": round(totals.get(p, 0), 2)} for p in seq]
+    spent = [o["total"] for o in out if o["total"] > 0]
+    return {
+        "months": out,
+        "average": round(sum(spent) / len(spent), 2) if spent else 0,
+        "max": max((o["total"] for o in out), default=0),
+    }
+
+
 @app.route("/api/month/<period>")
 def get_month(period):
     conn = get_conn()
@@ -200,6 +223,7 @@ def get_month(period):
             r["name"]: r["reading"]
             for r in conn.execute("SELECT name, reading FROM meters WHERE period = ?", (prev,))
         }
+        trend = build_trend(conn, period)
     finally:
         conn.close()
 
@@ -215,6 +239,7 @@ def get_month(period):
         "meters": build_meters(meters, prev_readings),
         "loans": [loan_to_json(r) for r in loans],
         "notes": [note_to_json(r) for r in notes],
+        "trend": trend,
     })
 
 
