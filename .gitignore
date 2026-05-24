@@ -1,0 +1,22 @@
+# ─── Personal financial data — keep OFF GitHub ───────────────
+# Source spreadsheet with real card/loan/amount figures
+*.xlsx
+2024-2025-2026 _ Monthly Expenses.xlsx
+# Local SQLite DB (regenerated from the Excel via backend/import_excel.py)
+backend/dinero.db
+*.db
+
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ─── Claude Code local settings ──────────────────────────────
+.claude/settings.local.json
+
+# ─── OS / editor cruft ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
