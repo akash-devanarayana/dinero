@@ -23,6 +23,7 @@ const store = {
   months: [], period: null, label: "",
   monthName: "", yearStr: "",
   TODAY: new Date(),
+  monthState: "current", daysToStart: 0, daysSinceEnd: 0,
   loading: true, error: null,
 
   // ── subscriptions / re-render plumbing ─────────────────────────
@@ -67,6 +68,9 @@ const store = {
     this.monthName = d.monthName;
     this.yearStr = d.year;
     this.TODAY = new Date(d.today + "T00:00:00");
+    this.monthState = d.state || "current";
+    this.daysToStart = d.daysToStart || 0;
+    this.daysSinceEnd = d.daysSinceEnd || 0;
     this.ITEMS = d.items;
     this.LOANS = d.loans;
     this.METERS = d.meters;
