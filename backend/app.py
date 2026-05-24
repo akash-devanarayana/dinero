@@ -46,6 +46,12 @@ def next_period(period):
     return f"{y + 1}-01" if m == 12 else f"{y}-{m + 1:02d}"
 
 
+def period_index(period):
+    """A monotonic month number so two periods can be compared/subtracted."""
+    y, m = parse_period(period)
+    return y * 12 + (m - 1)
+
+
 def all_periods(conn):
     rows = conn.execute(
         """SELECT period FROM bills
@@ -89,7 +95,36 @@ def meter_to_json(r, prev_reading):
 
 
 def loan_to_json(r):
-    return {"id": r["id"], "name": r["name"], "amount": r["amount"], "status": r["status"]}
+    return {"id": r["id"], "name": r["name"], "amount": r["amount"], "status": r["status"], "kind": "loan"}
+
+
+def plan_to_json(r, paid_count=0):
+    return {
+        "id": r["id"], "name": r["name"], "totalAmount": r["total_amount"],
+        "tenure": r["tenure_months"], "monthly": r["monthly_installment"],
+        "startPeriod": r["start_period"], "paidCount": paid_count,
+    }
+
+
+def build_loan_installments(conn, period):
+    """Generate this month's installment for every plan whose tenure covers it."""
+    pidx = period_index(period)
+    paid = {(r["plan_id"], r["period"]) for r in
+            conn.execute("SELECT plan_id, period FROM loan_installment_payments")}
+    out = []
+    for p in conn.execute("SELECT * FROM loan_plans ORDER BY id"):
+        n = pidx - period_index(p["start_period"])
+        if 0 <= n < p["tenure_months"]:
+            out.append({
+                "kind": "installment",
+                "planId": p["id"],
+                "name": p["name"],
+                "amount": p["monthly_installment"],
+                "installmentNo": n + 1,
+                "tenure": p["tenure_months"],
+                "status": "done" if (p["id"], period) in paid else "due",
+            })
+    return out
 
 
 def build_meters(meter_rows, prev_readings):
@@ -224,6 +259,7 @@ def get_month(period):
             for r in conn.execute("SELECT name, reading FROM meters WHERE period = ?", (prev,))
         }
         trend = build_trend(conn, period)
+        installments = build_loan_installments(conn, period)
     finally:
         conn.close()
 
@@ -237,7 +273,7 @@ def get_month(period):
         **month_progress(period),
         "items": [bill_to_json(r) for r in bills],
         "meters": build_meters(meters, prev_readings),
-        "loans": [loan_to_json(r) for r in loans],
+        "loans": [loan_to_json(r) for r in loans] + installments,
         "notes": [note_to_json(r) for r in notes],
         "trend": trend,
     })
@@ -499,6 +535,99 @@ def delete_loan(loan_id):
     finally:
         conn.close()
     return jsonify({"ok": True})
+
+
+# ─── loan plans (admin) ───────────────────────────────────────────────────────
+def _plan_fields(data):
+    return (
+        (data.get("name") or "").strip(),
+        float(data.get("totalAmount") or data.get("total_amount") or 0),
+        int(data.get("tenure") or data.get("tenure_months") or 1),
+        float(data.get("monthly") or data.get("monthly_installment") or 0),
+        (data.get("startPeriod") or data.get("start_period") or current_period()),
+    )
+
+
+@app.route("/api/loan-plans")
+def list_loan_plans():
+    conn = get_conn()
+    try:
+        counts = {r["plan_id"]: r["c"] for r in conn.execute(
+            "SELECT plan_id, COUNT(*) AS c FROM loan_installment_payments GROUP BY plan_id")}
+        rows = conn.execute("SELECT * FROM loan_plans ORDER BY id").fetchall()
+    finally:
+        conn.close()
+    return jsonify({"plans": [plan_to_json(r, counts.get(r["id"], 0)) for r in rows]})
+
+
+@app.route("/api/loan-plans", methods=["POST"])
+def create_loan_plan():
+    name, total, tenure, monthly, start = _plan_fields(request.get_json(force=True))
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """INSERT INTO loan_plans (name, total_amount, tenure_months, monthly_installment, start_period, created_at)
+               VALUES (?,?,?,?,?,?)""",
+            (name, total, tenure, monthly, start, datetime.date.today().isoformat()),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM loan_plans WHERE id = ?", (cur.lastrowid,)).fetchone()
+    finally:
+        conn.close()
+    return jsonify(plan_to_json(row)), 201
+
+
+@app.route("/api/loan-plans/<int:plan_id>", methods=["PUT"])
+def update_loan_plan(plan_id):
+    name, total, tenure, monthly, start = _plan_fields(request.get_json(force=True))
+    conn = get_conn()
+    try:
+        conn.execute(
+            """UPDATE loan_plans SET name=?, total_amount=?, tenure_months=?, monthly_installment=?, start_period=?
+               WHERE id=?""",
+            (name, total, tenure, monthly, start, plan_id),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM loan_plans WHERE id = ?", (plan_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(plan_to_json(row))
+
+
+@app.route("/api/loan-plans/<int:plan_id>", methods=["DELETE"])
+def delete_loan_plan(plan_id):
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM loan_plans WHERE id = ?", (plan_id,))
+        conn.execute("DELETE FROM loan_installment_payments WHERE plan_id = ?", (plan_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/loan-plans/<int:plan_id>/installment", methods=["POST"])
+def set_installment_paid(plan_id):
+    """Mark a plan's installment for a given month paid/unpaid."""
+    data = request.get_json(force=True)
+    period = data.get("period") or current_period()
+    paid = bool(data.get("paid"))
+    conn = get_conn()
+    try:
+        if paid:
+            conn.execute(
+                "INSERT OR IGNORE INTO loan_installment_payments (plan_id, period, paid_on) VALUES (?,?,?)",
+                (plan_id, period, datetime.date.today().isoformat()),
+            )
+        else:
+            conn.execute(
+                "DELETE FROM loan_installment_payments WHERE plan_id=? AND period=?", (plan_id, period))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True, "planId": plan_id, "period": period, "paid": paid})
 
 
 # ─── notes CRUD ───────────────────────────────────────────────────────────────

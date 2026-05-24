@@ -89,6 +89,14 @@ const Icon = {
       <path d="M13 9.6 A5.5 5.5 0 1 1 6.4 3 A4.3 4.3 0 0 0 13 9.6 Z" />
     </svg>
   ),
+  AdminUser: (props) => (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="6.3" cy="4.6" r="3" />
+      <path d="M10 9.2 C8.9 8.4 7.6 8.2 6.3 8.2 C3.5 8.2 1.7 10 1.7 12.4 L1.7 13.3 C1.7 13.7 2 14 2.4 14 L7.2 14" />
+      <circle cx="11.5" cy="11.5" r="1.5" />
+      <path d="M11.5 8.8 V9.7 M11.5 13.3 V14.2 M8.8 11.5 H9.7 M13.3 11.5 H14.2 M9.55 9.55 L10.2 10.2 M12.8 12.8 L13.45 13.45 M9.55 13.45 L10.2 12.8 M12.8 10.2 L13.45 9.55" />
+    </svg>
+  ),
 };
 
 window.Icon = Icon;

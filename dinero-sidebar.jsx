@@ -112,17 +112,16 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill,
           <span>paid {Ds.fmtInt(paid)}</span>
           <span>owed {Ds.fmtInt(owed)}</span>
         </div>
-      </section>
-
-      {showOverdue && overCount > 0 && (
-        <div className="sb-overdue">
-          <span className="ic">!</span>
-          <div className="txt">
-            <b>{overCount} overdue</b>
-            <small>{Ds.fmtInt(overAmt)} · handle today</small>
+        {showOverdue && overCount > 0 && (
+          <div className="sb-overdue">
+            <span className="ic">!</span>
+            <div className="txt">
+              <b>{overCount} overdue</b>
+              <small>{Ds.fmtInt(overAmt)} · handle today</small>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </section>
 
       <section className="sb-cats">
         <div className="sb-label">

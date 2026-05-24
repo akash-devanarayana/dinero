@@ -40,6 +40,8 @@ function App() {
   const [searchOpen, setSearchOpen] = useStateA(false);
   const [filter, setFilter] = useStateA("all");
   const [statusFilter, setStatusFilter] = useStateA("all");
+  const [view, setView] = useStateA("dashboard");
+  const [adminAuthed, setAdminAuthed] = useStateA(false);
   const [theme, setTheme] = useStateA(() =>
     document.documentElement.getAttribute("data-theme")
     || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
@@ -197,6 +199,17 @@ function App() {
 
   const ModalEntry = openKind && window.MODAL_MAP[openKind];
 
+  // separate admin section (gated by a simple login)
+  if (view === "admin") {
+    return (
+      <AdminSection
+        authed={adminAuthed}
+        onLogin={() => setAdminAuthed(true)}
+        onExit={() => setView("dashboard")}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-head">
@@ -215,6 +228,8 @@ function App() {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             {theme === "dark" ? <IconA.Sun /> : <IconA.Moon />}
           </button>
+          <button className="icon-btn" type="button" aria-label="Admin" title="Admin"
+            onClick={() => setView("admin")}><IconA.AdminUser /></button>
         </div>
       </header>
 
