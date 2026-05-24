@@ -89,6 +89,10 @@ def loan_to_json(r):
     return {"id": r["id"], "name": r["name"], "amount": r["amount"], "status": r["status"]}
 
 
+def note_to_json(r):
+    return {"id": r["id"], "body": r["body"]}
+
+
 def next_order(conn, table, period):
     row = conn.execute(
         f"SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM {table} WHERE period = ?",
@@ -152,6 +156,9 @@ def get_month(period):
         loans = conn.execute(
             "SELECT * FROM loans WHERE period = ? ORDER BY sort_order", (period,)
         ).fetchall()
+        notes = conn.execute(
+            "SELECT * FROM notes WHERE period = ? ORDER BY sort_order, id", (period,)
+        ).fetchall()
         prev = prev_period(period)
         prev_readings = {
             r["name"]: r["reading"]
@@ -170,6 +177,7 @@ def get_month(period):
         "items": [bill_to_json(r) for r in bills],
         "meters": [meter_to_json(r, prev_readings.get(r["name"])) for r in meters],
         "loans": [loan_to_json(r) for r in loans],
+        "notes": [note_to_json(r) for r in notes],
     })
 
 
@@ -371,6 +379,53 @@ def delete_loan(loan_id):
     conn = get_conn()
     try:
         conn.execute("DELETE FROM loans WHERE id = ?", (loan_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
+
+
+# ─── notes CRUD ───────────────────────────────────────────────────────────────
+@app.route("/api/notes", methods=["POST"])
+def create_note():
+    data = request.get_json(force=True)
+    period = data.get("period") or current_period()
+    body = (data.get("body") or "").strip()
+    conn = get_conn()
+    try:
+        order = next_order(conn, "notes", period)
+        cur = conn.execute(
+            "INSERT INTO notes (period, body, sort_order) VALUES (?,?,?)",
+            (period, body, order),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM notes WHERE id = ?", (cur.lastrowid,)).fetchone()
+    finally:
+        conn.close()
+    return jsonify(note_to_json(row)), 201
+
+
+@app.route("/api/notes/<int:note_id>", methods=["PUT"])
+def update_note(note_id):
+    data = request.get_json(force=True)
+    body = (data.get("body") or "").strip()
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE notes SET body = ? WHERE id = ?", (body, note_id))
+        conn.commit()
+        row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(note_to_json(row))
+
+
+@app.route("/api/notes/<int:note_id>", methods=["DELETE"])
+def delete_note(note_id):
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
         conn.commit()
     finally:
         conn.close()

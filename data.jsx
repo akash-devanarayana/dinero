@@ -19,7 +19,7 @@ const store = {
   fmt, fmtInt, CURRENCY, STATUS_LABEL, dayOf, monthOf,
 
   // live month data
-  ITEMS: [], LOANS: [], METERS: [],
+  ITEMS: [], LOANS: [], METERS: [], NOTES: [],
   months: [], period: null, label: "",
   monthName: "", yearStr: "",
   TODAY: new Date(),
@@ -70,6 +70,7 @@ const store = {
     this.ITEMS = d.items;
     this.LOANS = d.loans;
     this.METERS = d.meters;
+    this.NOTES = d.notes || [];
     this.loading = false;
     this.error = null;
     this._notify();
@@ -118,6 +119,20 @@ const store = {
 
   async markPaid(id) {
     await this._json(`/api/bills/${id}/mark-paid`, { method: "POST" });
+    await this.load(this.period);
+  },
+
+  async saveNote(body, id) {
+    if (id != null) {
+      await this._json(`/api/notes/${id}`, { method: "PUT", body: JSON.stringify({ body }) });
+    } else {
+      await this._json("/api/notes", { method: "POST", body: JSON.stringify({ body, period: this.period }) });
+    }
+    await this.load(this.period);
+  },
+
+  async deleteNote(id) {
+    await this._json(`/api/notes/${id}`, { method: "DELETE" });
     await this.load(this.period);
   },
 
