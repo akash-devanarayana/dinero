@@ -38,7 +38,22 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
 
   const today = Ds.TODAY.getDate();
   const daysInMonth = new Date(Ds.TODAY.getFullYear(), Ds.TODAY.getMonth() + 1, 0).getDate();
-  const monthPct = (today / daysInMonth) * 100;
+  const monthState = Ds.monthState || "current";
+  const plural = (n) => (n === 1 ? "" : "s");
+  let monthPct, progressLeft, progressRight;
+  if (monthState === "future") {
+    monthPct = 0;
+    progressLeft = "hasn’t started";
+    progressRight = Ds.daysToStart > 0 ? `starts in ${Ds.daysToStart} day${plural(Ds.daysToStart)}` : "upcoming";
+  } else if (monthState === "past") {
+    monthPct = 100;
+    progressLeft = "month complete";
+    progressRight = Ds.daysSinceEnd > 0 ? `ended ${Ds.daysSinceEnd} day${plural(Ds.daysSinceEnd)} ago` : "ended";
+  } else {
+    monthPct = (today / daysInMonth) * 100;
+    progressLeft = <>day <b>{today}</b> of {daysInMonth}</>;
+    progressRight = `${daysInMonth - today} day${plural(daysInMonth - today)} left`;
+  }
 
   const bars = [62, 58, 71, 49, 66, 73]; // mock 6 mo
   const allItems = [...cardT.items, ...utilT.items, ...subT.items];
@@ -62,11 +77,11 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill }) 
       </div>
 
       {showMonthBar && (
-        <div className="sb-progress">
+        <div className="sb-progress" data-state={monthState}>
           <div className="track"><div className="fill" style={{ width: monthPct + "%" }}></div></div>
           <div className="day">
-            <span>day <b>{today}</b> of {daysInMonth}</span>
-            <span>{daysInMonth - today} days left</span>
+            <span>{progressLeft}</span>
+            <span>{progressRight}</span>
           </div>
         </div>
       )}

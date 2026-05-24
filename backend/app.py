@@ -165,6 +165,20 @@ def create_next_month():
     }), 201
 
 
+def month_progress(period):
+    """Classify a month relative to today: past / current / future, with
+    friendly day counts for the not-yet-started and already-ended cases."""
+    y, m = parse_period(period)
+    today = datetime.date.today()
+    first = datetime.date(y, m, 1)
+    last = datetime.date(y, m, calendar.monthrange(y, m)[1])
+    if today < first:
+        return {"state": "future", "daysToStart": (first - today).days, "daysSinceEnd": 0}
+    if today > last:
+        return {"state": "past", "daysToStart": 0, "daysSinceEnd": (today - last).days}
+    return {"state": "current", "daysToStart": 0, "daysSinceEnd": 0}
+
+
 @app.route("/api/month/<period>")
 def get_month(period):
     conn = get_conn()
@@ -196,6 +210,7 @@ def get_month(period):
         "monthName": MONTH_NAMES[m],
         "year": y,
         "today": anchor_today(period),
+        **month_progress(period),
         "items": [bill_to_json(r) for r in bills],
         "meters": build_meters(meters, prev_readings),
         "loans": [loan_to_json(r) for r in loans],

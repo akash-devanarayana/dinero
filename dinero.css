@@ -386,6 +386,9 @@ input, select, textarea { font-family: inherit; }
   color: var(--ink-3);
 }
 .sb-progress .day b { color: var(--ink-2); font-weight: 500; }
+/* a finished month reads as "complete"; an upcoming one as an empty track */
+.sb-progress[data-state="past"] .fill { background: var(--accent); }
+.sb-progress[data-state="future"] .track { opacity: 0.6; }
 
 /* hero outstanding */
 .sb-hero .big {
