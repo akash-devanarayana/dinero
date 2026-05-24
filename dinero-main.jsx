@@ -145,9 +145,28 @@ function MetersSection({ onEdit, onAdd }) {
     >
       <div className="bills" style={{ paddingTop: 6 }}>
         {DMain.METERS.map(m => {
+          if (m.last == null) {
+            // standard meter with no reading logged yet this month
+            return (
+              <div key={m.id || m.name} className="meter-row meter-pending">
+                <div className="name-block">
+                  <div className="name">{m.name}</div>
+                  <div className="reading">
+                    <span className="prev">
+                      {m.prev != null ? `last month ${m.prev}${m.unit}` : "no history yet"}
+                    </span>
+                  </div>
+                </div>
+                <button className="meter-log" type="button"
+                  onClick={() => onEdit("meter", { name: m.name, unit: m.unit })}>
+                  <IconN.Plus /> Log reading
+                </button>
+              </div>
+            );
+          }
           const delta = m.last - m.prev;
           return (
-            <div key={m.id} className="meter-row">
+            <div key={m.id || m.name} className="meter-row">
               <div className="name-block">
                 <div className="name">{m.name}</div>
                 <div className="reading">
@@ -342,7 +361,7 @@ function currentMonthEntries() {
   const out = [];
   (D.ITEMS || []).forEach((i) => out.push(billEntry(i, D.period, label)));
   (D.LOANS || []).forEach((l) => out.push(loanEntry(l, D.period, label)));
-  (D.METERS || []).forEach((m) => out.push(meterEntry(m, D.period, label)));
+  (D.METERS || []).filter((m) => m.last != null).forEach((m) => out.push(meterEntry(m, D.period, label)));
   (D.NOTES || []).forEach((n) => out.push(noteEntry(n, D.period, label)));
   return out;
 }

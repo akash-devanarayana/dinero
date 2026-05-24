@@ -21,6 +21,9 @@ CORS(app)
 MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
 
+# Meters that should appear in every month even before a reading is logged.
+STANDARD_METERS = [("Electricity", "kWh"), ("Water", "m³")]
+
 
 # ─── helpers ───────────────────────────────────────────────────────────────
 def parse_period(period):
@@ -87,6 +90,25 @@ def meter_to_json(r, prev_reading):
 
 def loan_to_json(r):
     return {"id": r["id"], "name": r["name"], "amount": r["amount"], "status": r["status"]}
+
+
+def build_meters(meter_rows, prev_readings):
+    """Always include the standard meters (real row if a reading exists this
+    month, otherwise a 'pending' placeholder carrying last month's reading),
+    followed by any other meters that do have a reading."""
+    present = {r["name"]: r for r in meter_rows}
+    std_names = {n for n, _ in STANDARD_METERS}
+    out = []
+    for name, unit in STANDARD_METERS:
+        if name in present:
+            out.append(meter_to_json(present[name], prev_readings.get(name)))
+        else:
+            out.append({"id": None, "name": name, "unit": unit, "last": None,
+                        "prev": prev_readings.get(name), "note": None, "pending": True})
+    for r in meter_rows:
+        if r["name"] not in std_names:
+            out.append(meter_to_json(r, prev_readings.get(r["name"])))
+    return out
 
 
 def note_to_json(r):
@@ -175,7 +197,7 @@ def get_month(period):
         "year": y,
         "today": anchor_today(period),
         "items": [bill_to_json(r) for r in bills],
-        "meters": [meter_to_json(r, prev_readings.get(r["name"])) for r in meters],
+        "meters": build_meters(meters, prev_readings),
         "loans": [loan_to_json(r) for r in loans],
         "notes": [note_to_json(r) for r in notes],
     })

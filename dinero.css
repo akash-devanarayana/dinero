@@ -819,6 +819,27 @@ input, select, textarea { font-family: inherit; }
 }
 .meter-row:last-child { border-bottom: 0; }
 .meter-row:hover { background: var(--surface-hover); }
+
+/* standard meter with no reading logged yet */
+.meter-pending .name { color: var(--ink-3); }
+.meter-row .meter-log {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  border-radius: var(--r-1);
+  padding: 6px 12px;
+  cursor: default;
+  white-space: nowrap;
+}
+.meter-row .meter-log:hover { border-color: var(--accent); }
+.meter-row .meter-log svg { width: 13px; height: 13px; }
 .meter-row .name {
   font-family: var(--serif);
   font-style: italic;
