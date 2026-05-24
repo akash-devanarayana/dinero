@@ -7,12 +7,17 @@ const { useState: useStateAd, useEffect: useEffectAd } = React;
 const DAdmin = window.DINERO;
 const IconAd = window.Icon;
 
-function AdminSection({ authed, onLogin, onExit }) {
+function AdminSection({ authed, onLogin, onExit, onLogout }) {
+  // skip the login form if a valid session cookie already exists
+  useEffectAd(() => {
+    if (!authed) DAdmin.checkAdmin().then((ok) => { if (ok) onLogin(); });
+  }, []);
   return (
     <div className="admin">
       <header className="admin-head">
         <div className="brand"><span className="brand-dot"></span>Dinero <span className="admin-tag">admin</span></div>
         <span className="spacer"></span>
+        {authed && <button className="btn btn-ghost" type="button" onClick={onLogout}>Sign out</button>}
         <button className="btn btn-ghost" type="button" onClick={onExit}>← Back to app</button>
       </header>
       {authed ? <LoanPlansAdmin /> : <AdminLogin onLogin={onLogin} />}
@@ -24,9 +29,13 @@ function AdminLogin({ onLogin }) {
   const [u, setU] = useStateAd("");
   const [p, setP] = useStateAd("");
   const [err, setErr] = useStateAd("");
-  const submit = (e) => {
+  const [busy, setBusy] = useStateAd(false);
+  const submit = async (e) => {
     e.preventDefault();
-    if (u.trim() === "admin" && p === "admin") onLogin();
+    setBusy(true);
+    const ok = await DAdmin.adminLogin(u.trim(), p);
+    setBusy(false);
+    if (ok) onLogin();
     else setErr("Invalid credentials — try admin / admin.");
   };
   return (
@@ -41,7 +50,7 @@ function AdminLogin({ onLogin }) {
           <input type="password" value={p} onChange={(e) => setP(e.target.value)} />
         </label>
         {err && <div className="login-err">{err}</div>}
-        <button className="btn btn-primary" type="submit">Sign in</button>
+        <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>
     </div>
   );
@@ -114,8 +123,15 @@ function LoanPlanForm({ plan, onClose }) {
     monthly:     plan.monthly != null ? String(plan.monthly) : "",
     startPeriod: plan.startPeriod || DAdmin.period || "",
   });
+  const errs = {
+    name: reqText(s.name),
+    tenure: numCheck(s.tenure, { required: true, integer: true, min: 1 }),
+    monthly: numCheck(s.monthly, { required: true, positive: true }),
+    totalAmount: numCheck(s.totalAmount, { positive: true }),
+  };
+  const [showErr, setShowErr] = useStateAd(false);
   const save = async () => {
-    if (!s.name.trim()) return;
+    if (Object.values(errs).some(Boolean)) return setShowErr(true);
     await DAdmin.saveLoanPlan({
       name: s.name.trim(),
       totalAmount: Number(s.totalAmount) || 0,
@@ -134,16 +150,16 @@ function LoanPlanForm({ plan, onClose }) {
           <button className="x" type="button" onClick={onClose} aria-label="Close"><IconAd.X /></button>
         </div>
         <div className="modal-body">
-          <Field label="Plan name" required>
+          <Field label="Plan name" required error={showErr ? errs.name : null}>
             <input value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} placeholder="e.g. NTB, LOLC…" />
           </Field>
-          <Field label="Total amount" prefix={DAdmin.CURRENCY}>
+          <Field label="Total amount" prefix={DAdmin.CURRENCY} error={showErr ? errs.totalAmount : null}>
             <input inputMode="decimal" value={s.totalAmount} onChange={(e) => setS({ ...s, totalAmount: e.target.value })} placeholder="0.00" />
           </Field>
-          <Field label="Tenure (months)" required>
+          <Field label="Tenure (months)" required error={showErr ? errs.tenure : null}>
             <input inputMode="numeric" value={s.tenure} onChange={(e) => setS({ ...s, tenure: e.target.value })} placeholder="12" />
           </Field>
-          <Field label="Monthly installment" prefix={DAdmin.CURRENCY} required>
+          <Field label="Monthly installment" prefix={DAdmin.CURRENCY} required error={showErr ? errs.monthly : null}>
             <input inputMode="decimal" value={s.monthly} onChange={(e) => setS({ ...s, monthly: e.target.value })} placeholder="0.00" />
           </Field>
           <Field label="Start month">

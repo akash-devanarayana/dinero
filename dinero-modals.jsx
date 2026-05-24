@@ -41,15 +41,30 @@ function Modal({ title, tag, sub, meta, children, footer, onClose, previewLabel 
   );
 }
 
-function Field({ label, full, required, helper, prefix, children }) {
+function Field({ label, full, required, helper, error, prefix, children }) {
   return (
-    <div className={"field" + (full ? " row-full" : "") + (prefix ? " has-prefix" : "")}>
+    <div className={"field" + (full ? " row-full" : "") + (prefix ? " has-prefix" : "") + (error ? " has-error" : "")}>
       <label>{label}{required && <span className="req">*</span>}</label>
       {prefix && <span className="prefix">{prefix}</span>}
       {children}
-      {helper && <div className="helper">{helper}</div>}
+      {error ? <div className="helper field-error">{error}</div> : helper && <div className="helper">{helper}</div>}
     </div>
   );
+}
+
+// ── validation helpers (shared with the admin loan-plan form) ──
+function reqText(v) {
+  return String(v == null ? "" : v).trim() === "" ? "Required" : null;
+}
+function numCheck(v, { required = false, positive = false, integer = false, min } = {}) {
+  const s = String(v == null ? "" : v).trim();
+  if (s === "") return required ? "Required" : null;
+  const n = Number(s);
+  if (!isFinite(n)) return "Enter a number";
+  if (integer && !Number.isInteger(n)) return "Whole number only";
+  if (positive && n < 0) return "Must be 0 or more";
+  if (min != null && n < min) return `Must be at least ${min}`;
+  return null;
 }
 
 function Seg({ value, onChange, options }) {
@@ -112,6 +127,13 @@ function CardModal({ onClose, previewLabel, record, onSave, onDelete }) {
     status: s.status, paidVia: s.method,
     paidOn: record?.paidOn || null, paidAmt: record?.paidAmt ?? null,
   };
+  const errs = {
+    name: reqText(s.name),
+    amount: numCheck(s.amount, { required: true, positive: true }),
+    min: numCheck(s.min, { positive: true }),
+  };
+  const [showErr, setShowErr] = useStateM(false);
+  const submit = () => { if (Object.values(errs).some(Boolean)) return setShowErr(true); onSave(payload); };
   return (
     <Modal
       title={editing ? "Edit card" : "Add card"}
@@ -125,18 +147,18 @@ function CardModal({ onClose, previewLabel, record, onSave, onDelete }) {
         record.paidOn ? { label: "paid on", value: record.paidOn } : null,
       ].filter(Boolean)} />}
       footer={
-        <EditFooter editing={editing} onClose={onClose} onSave={() => onSave(payload)} onDelete={onDelete}
+        <EditFooter editing={editing} onClose={onClose} onSave={submit} onDelete={onDelete}
           saveLabel={editing ? "Save changes" : "Save card"}
           ftnote={editing ? "Last edited just now." : "Outstanding rolls over month-to-month."} />
       }
     >
-      <Field label="Card name" required>
+      <Field label="Card name" required error={showErr ? errs.name : null}>
         <input value={s.name} onChange={e => setS({ ...s, name: e.target.value })} placeholder="e.g. NTB Mastercard" />
       </Field>
-      <Field label="Outstanding amount" prefix={Dm.CURRENCY} required>
+      <Field label="Outstanding amount" prefix={Dm.CURRENCY} required error={showErr ? errs.amount : null}>
         <input inputMode="decimal" value={s.amount} onChange={e => setS({ ...s, amount: e.target.value })} placeholder="0.00" />
       </Field>
-      <Field label="Minimum payment" prefix={Dm.CURRENCY}>
+      <Field label="Minimum payment" prefix={Dm.CURRENCY} error={showErr ? errs.min : null}>
         <input inputMode="decimal" value={s.min} onChange={e => setS({ ...s, min: e.target.value })} placeholder="0.00" />
       </Field>
       <Field label="Due date">
@@ -167,6 +189,12 @@ function UtilityModal({ onClose, previewLabel, record, onSave, onDelete }) {
     name: s.name, amount: s.amount, due: s.due || null, status: s.status,
     paidVia: s.method, paidOn: s.paidOn || null, paidAmt: record?.paidAmt ?? null,
   };
+  const errs = {
+    name: reqText(s.name),
+    amount: numCheck(s.amount, { required: true, positive: true }),
+  };
+  const [showErr, setShowErr] = useStateM(false);
+  const submit = () => { if (Object.values(errs).some(Boolean)) return setShowErr(true); onSave(payload); };
   return (
     <Modal
       title={editing ? "Edit utility" : "Add utility"}
@@ -180,15 +208,15 @@ function UtilityModal({ onClose, previewLabel, record, onSave, onDelete }) {
         record.paidOn ? { label: "paid on", value: record.paidOn } : null,
       ].filter(Boolean)} />}
       footer={
-        <EditFooter editing={editing} onClose={onClose} onSave={() => onSave(payload)} onDelete={onDelete}
+        <EditFooter editing={editing} onClose={onClose} onSave={submit} onDelete={onDelete}
           saveLabel={editing ? "Save changes" : "Save utility"}
           ftnote={editing ? "Last edited just now." : "Tip — link a meter to auto-fill the amount."} />
       }
     >
-      <Field label="Utility name" required>
+      <Field label="Utility name" required error={showErr ? errs.name : null}>
         <input value={s.name} onChange={e => setS({ ...s, name: e.target.value })} placeholder="e.g. SLT, Water…" />
       </Field>
-      <Field label="Amount" prefix={Dm.CURRENCY} required>
+      <Field label="Amount" prefix={Dm.CURRENCY} required error={showErr ? errs.amount : null}>
         <input inputMode="decimal" value={s.amount} onChange={e => setS({ ...s, amount: e.target.value })} placeholder="0.00" />
       </Field>
       <Field label="Due date">
@@ -222,6 +250,12 @@ function SubscriptionModal({ onClose, previewLabel, record, onSave, onDelete }) 
     cadence: s.cadence, status: record?.status || "due",
     paidOn: record?.paidOn || null, paidAmt: record?.paidAmt ?? null,
   };
+  const errs = {
+    name: reqText(s.name),
+    amount: numCheck(s.amount, { required: true, positive: true }),
+  };
+  const [showErr, setShowErr] = useStateM(false);
+  const submit = () => { if (Object.values(errs).some(Boolean)) return setShowErr(true); onSave(payload); };
   return (
     <Modal
       title={editing ? "Edit subscription" : "Add subscription"}
@@ -234,15 +268,15 @@ function SubscriptionModal({ onClose, previewLabel, record, onSave, onDelete }) 
         { label: "category", value: record.cat },
       ]} />}
       footer={
-        <EditFooter editing={editing} onClose={onClose} onSave={() => onSave(payload)} onDelete={onDelete}
+        <EditFooter editing={editing} onClose={onClose} onSave={submit} onDelete={onDelete}
           saveLabel={editing ? "Save changes" : "Save subscription"}
           ftnote={editing ? "Last edited just now." : "Auto-rolls every cycle."} />
       }
     >
-      <Field label="Service name" required>
+      <Field label="Service name" required error={showErr ? errs.name : null}>
         <input value={s.name} onChange={e => setS({ ...s, name: e.target.value })} placeholder="e.g. Spotify, Netflix…" />
       </Field>
-      <Field label="Amount" prefix={Dm.CURRENCY} required>
+      <Field label="Amount" prefix={Dm.CURRENCY} required error={showErr ? errs.amount : null}>
         <input inputMode="decimal" value={s.amount} onChange={e => setS({ ...s, amount: e.target.value })} placeholder="0.00" />
       </Field>
       <Field label="Renews on">
@@ -274,6 +308,9 @@ function MeterModal({ onClose, previewLabel, record, onSave, onDelete }) {
     note:    record?.note || "",
   });
   const payload = { name: s.kind, reading: s.reading, unit: s.unit, date: s.date || null, note: s.note || null };
+  const errs = { reading: numCheck(s.reading, { required: true, positive: true }) };
+  const [showErr, setShowErr] = useStateM(false);
+  const submit = () => { if (Object.values(errs).some(Boolean)) return setShowErr(true); onSave(payload); };
   return (
     <Modal
       title={editing ? "Edit meter reading" : "Add meter reading"}
@@ -286,7 +323,7 @@ function MeterModal({ onClose, previewLabel, record, onSave, onDelete }) {
         { label: "delta",    value: `+${record.last - record.prev}` },
       ]} />}
       footer={
-        <EditFooter editing={editing} onClose={onClose} onSave={() => onSave(payload)} onDelete={onDelete}
+        <EditFooter editing={editing} onClose={onClose} onSave={submit} onDelete={onDelete}
           saveLabel={editing ? "Save changes" : "Save reading"}
           ftnote={editing ? `Previous ${record.name}: ${record.prev}${record.unit}` : "Logs build the consumption trend."} />
       }
@@ -296,7 +333,7 @@ function MeterModal({ onClose, previewLabel, record, onSave, onDelete }) {
              onChange={v => setS({ ...s, kind: v, unit: v === "Water" ? "m³" : "kWh" })}
              options={["Electricity", "Water", "Other"]} />
       </Field>
-      <Field label={`Current reading (${s.unit})`} required>
+      <Field label={`Current reading (${s.unit})`} required error={showErr ? errs.reading : null}>
         <input inputMode="decimal" value={s.reading} onChange={e => setS({ ...s, reading: e.target.value })} placeholder="0" />
       </Field>
       <Field label="Reading date">
@@ -319,6 +356,12 @@ function LoanModal({ onClose, previewLabel, record, onSave, onDelete }) {
     paidOn: "",
   });
   const payload = { name: s.name, amount: s.amount, status: s.status, paidOn: s.paidOn || null };
+  const errs = {
+    name: reqText(s.name),
+    amount: numCheck(s.amount, { required: true, positive: true }),
+  };
+  const [showErr, setShowErr] = useStateM(false);
+  const submit = () => { if (Object.values(errs).some(Boolean)) return setShowErr(true); onSave(payload); };
   return (
     <Modal
       title={editing ? "Edit loan" : "Add loan payment"}
@@ -331,15 +374,15 @@ function LoanModal({ onClose, previewLabel, record, onSave, onDelete }) {
         { label: "status", value: record.status },
       ]} />}
       footer={
-        <EditFooter editing={editing} onClose={onClose} onSave={() => onSave(payload)} onDelete={onDelete}
+        <EditFooter editing={editing} onClose={onClose} onSave={submit} onDelete={onDelete}
           saveLabel={editing ? "Save changes" : "Save loan"}
           ftnote={editing ? "Last edited just now." : "Mark done once cleared."} />
       }
     >
-      <Field label="Loan name" required>
+      <Field label="Loan name" required error={showErr ? errs.name : null}>
         <input value={s.name} onChange={e => setS({ ...s, name: e.target.value })} placeholder="e.g. NTB, LOLC…" />
       </Field>
-      <Field label="Amount" prefix={Dm.CURRENCY} required>
+      <Field label="Amount" prefix={Dm.CURRENCY} required error={showErr ? errs.amount : null}>
         <input inputMode="decimal" value={s.amount} onChange={e => setS({ ...s, amount: e.target.value })} placeholder="0" />
       </Field>
       <Field label="Status" full>

@@ -142,6 +142,24 @@ const store = {
     await this.load(this.period);
   },
 
+  // ── admin auth (gates the loan-plan routes) ───────────────────
+  async adminLogin(username, password) {
+    const res = await fetch("/api/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) return false;
+    const d = await res.json();
+    return !!d.admin;
+  },
+  async adminLogout() {
+    try { await fetch("/api/logout", { method: "POST" }); } catch (e) {}
+  },
+  async checkAdmin() {
+    try { const d = await this._json("/api/me"); return !!d.admin; }
+    catch (e) { return false; }
+  },
+
   // ── loan plans (admin) ─────────────────────────────────────────
   loanPlans: [],
   async loadLoanPlans() {
