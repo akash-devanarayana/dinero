@@ -43,7 +43,9 @@ function RowActions({ canMarkPaid, onEdit, onMarkPaid }) {
 }
 
 // ─── Week strip ────────────────────────────────────────
-function WeekStrip({ days = 7 }) {
+const WEEK_KIND = { Card: "card", Utility: "utility", Subscription: "subscription" };
+
+function WeekStrip({ days = 7, onEdit }) {
   const start = new Date(DMain.TODAY);
   const dayArr = Array.from({ length: days }, (_, k) => {
     const d = new Date(start); d.setDate(start.getDate() + k);
@@ -54,12 +56,20 @@ function WeekStrip({ days = 7 }) {
     const dd = new Date(i.due);
     return dd.getUTCDate() === d.getDate() && dd.getUTCMonth() === d.getMonth();
   });
+  const jumpToBills = () => {
+    const el = document.querySelector(".main-cols, .filter-empty");
+    if (el) el.scrollIntoView({ block: "start" });
+  };
 
   return (
     <SectionCard
       title="This week"
       subtitle={`next ${days} days`}
-      right={<span className="subtitle" style={{ color: "var(--ink-3)" }}>scroll to month view →</span>}
+      right={
+        <button type="button" className="week-jump" onClick={jumpToBills}>
+          scroll to month view →
+        </button>
+      }
       className="week"
     >
       <div className="week-grid" style={{ gridTemplateColumns: `repeat(${days}, 1fr)` }}>
@@ -77,15 +87,16 @@ function WeekStrip({ days = 7 }) {
               </div>
               {its.length === 0 && <div className="empty">—</div>}
               {its.slice(0, 2).map(it => (
-                <div key={it.id} className={"ditem " + (it.status === "paid" ? "paid" : "")}>
+                <button key={it.id} type="button"
+                  className={"ditem" + (it.status === "paid" ? " paid" : "")}
+                  title={`${it.name} · ${DMain.fmt(it.amount)} — edit`}
+                  onClick={() => onEdit(WEEK_KIND[it.cat] || "utility", it)}>
                   {it.name.length > 11 ? it.name.slice(0, 10) + "…" : it.name}
                   <span className="amt">{DMain.fmtInt(it.amount)}</span>
-                </div>
+                </button>
               ))}
               {its.length > 2 && (
-                <div className="ditem" style={{ color: "var(--ink-3)", fontWeight: 400 }}>
-                  +{its.length - 2} more
-                </div>
+                <div className="ditem more">+{its.length - 2} more</div>
               )}
             </div>
           );

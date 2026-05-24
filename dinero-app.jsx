@@ -232,7 +232,7 @@ function App() {
       />
 
       <main className="main" data-screen-label="Dashboard">
-        {t.showWeek && <WeekStrip days={t.weekDays} />}
+        {t.showWeek && <WeekStrip days={t.weekDays} onEdit={editModal} />}
 
         {anyVisible ? (
           <div className="main-cols">
