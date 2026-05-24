@@ -696,7 +696,29 @@ input, select, textarea { font-family: inherit; }
   flex-direction: column;
   gap: 1px;
 }
+.week-day button.ditem {
+  appearance: none; -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  width: calc(100% + 8px);
+  margin: 0 -4px;
+  padding: 2px 4px;
+  text-align: left;
+  font-family: inherit;
+  border-radius: 5px;
+  cursor: default;
+  transition: background .12s;
+}
+.week-day button.ditem:hover { background: var(--surface-2); }
 .week-day .ditem.paid { color: var(--ink-3); text-decoration: line-through; }
+.week-day .ditem.more { color: var(--ink-3); font-weight: 400; }
+.week-jump {
+  appearance: none; border: 0; background: transparent;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+  color: var(--ink-3); cursor: default; padding: 0;
+  transition: color .12s;
+}
+.week-jump:hover { color: var(--accent); }
 .week-day .ditem .amt {
   font-family: var(--mono);
   font-size: 10px;
