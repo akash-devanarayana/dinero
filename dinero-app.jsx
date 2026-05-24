@@ -164,7 +164,6 @@ function App() {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             {theme === "dark" ? <IconA.Sun /> : <IconA.Moon />}
           </button>
-          <button className="icon-btn" type="button" aria-label="Settings"><IconA.Settings /></button>
         </div>
       </header>
 
