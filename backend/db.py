@@ -7,7 +7,9 @@ show one month at a time and navigate between months.
 import os
 import sqlite3
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dinero.db")
+# Override with the DINERO_DB env var (used by tests to point at a temp DB).
+DB_PATH = os.environ.get("DINERO_DB") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "dinero.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS bills (
