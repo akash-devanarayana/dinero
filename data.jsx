@@ -24,6 +24,7 @@ const store = {
   monthName: "", yearStr: "",
   TODAY: new Date(),
   monthState: "current", daysToStart: 0, daysSinceEnd: 0,
+  trend: { months: [], average: 0, max: 0 },
   loading: true, error: null,
 
   // ── subscriptions / re-render plumbing ─────────────────────────
@@ -71,6 +72,7 @@ const store = {
     this.monthState = d.state || "current";
     this.daysToStart = d.daysToStart || 0;
     this.daysSinceEnd = d.daysSinceEnd || 0;
+    this.trend = d.trend || { months: [], average: 0, max: 0 };
     this.ITEMS = d.items;
     this.LOANS = d.loans;
     this.METERS = d.meters;
