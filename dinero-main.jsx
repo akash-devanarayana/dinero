@@ -203,26 +203,49 @@ function MetersSection({ onEdit, onAdd }) {
 
 // ─── Loans section ─────────────────────────────────────
 function LoansSection({ onEdit, onAdd }) {
+  const loans = DMain.LOANS || [];
+  const total = loans.reduce((s, l) => s + (l.amount || 0), 0);
   return (
     <SectionCard title="Loans" subtitle="status">
       <div className="bills">
         <div className="bill-totals">
-          <span className="lbl">Total settled</span>
-          <span className="val">{DMain.fmtInt(DMain.LOANS.reduce((s, l) => s + l.amount, 0))}</span>
+          <span className="lbl">This month</span>
+          <span className="val">{DMain.fmtInt(total)}</span>
         </div>
-        {DMain.LOANS.map(l => (
-          <div key={l.id} className="bill-row">
-            <div className="name">
-              <span className="label">{l.name}</span>
-              <span className="meta">{l.status === "done" ? "settled" : "ongoing"}</span>
+        {loans.map(l => {
+          if (l.kind === "installment") {
+            const paid = l.status === "done";
+            return (
+              <div key={"inst-" + l.planId} className="bill-row">
+                <div className="name">
+                  <span className="label">{l.name}</span>
+                  <span className="meta">installment {l.installmentNo} of {l.tenure}</span>
+                </div>
+                <Pill status={paid ? "paid" : "due"}>{paid ? "paid" : "due"}</Pill>
+                <div className="amt">{DMain.fmtInt(l.amount)}</div>
+                <span className="actions">
+                  <button className="btn-icon" type="button"
+                    title={paid ? "Mark unpaid" : "Mark paid"}
+                    aria-label={paid ? "Mark unpaid" : "Mark paid"}
+                    onClick={() => DMain.payInstallment(l.planId, !paid)}>
+                    {paid ? <IconN.X /> : <IconN.Check />}
+                  </button>
+                </span>
+              </div>
+            );
+          }
+          return (
+            <div key={l.id} className="bill-row">
+              <div className="name">
+                <span className="label">{l.name}</span>
+                <span className="meta">{l.status === "done" ? "settled" : "ongoing"}</span>
+              </div>
+              <Pill status="paid">{l.status}</Pill>
+              <div className="amt">{DMain.fmtInt(l.amount)}</div>
+              <RowActions onEdit={() => onEdit("loan", l)} />
             </div>
-            <Pill status="paid">{l.status}</Pill>
-            <div className="amt">{DMain.fmtInt(l.amount)}</div>
-            <RowActions
-              onEdit={() => onEdit("loan", l)}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="card-foot">
         <button className="ghost-add" type="button" onClick={onAdd}>

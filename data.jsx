@@ -142,6 +142,33 @@ const store = {
     await this.load(this.period);
   },
 
+  // ── loan plans (admin) ─────────────────────────────────────────
+  loanPlans: [],
+  async loadLoanPlans() {
+    const r = await this._json("/api/loan-plans");
+    this.loanPlans = r.plans || [];
+    this._notify();
+    return this.loanPlans;
+  },
+  async saveLoanPlan(payload, id) {
+    if (id != null) await this._json(`/api/loan-plans/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+    else await this._json("/api/loan-plans", { method: "POST", body: JSON.stringify(payload) });
+    await this.loadLoanPlans();
+    await this.load(this.period);   // installments may have changed
+  },
+  async deleteLoanPlan(id) {
+    await this._json(`/api/loan-plans/${id}`, { method: "DELETE" });
+    await this.loadLoanPlans();
+    await this.load(this.period);
+  },
+  // mark this month's installment for a plan paid/unpaid
+  async payInstallment(planId, paid) {
+    await this._json(`/api/loan-plans/${planId}/installment`, {
+      method: "POST", body: JSON.stringify({ period: this.period, paid }),
+    });
+    await this.load(this.period);
+  },
+
   // search across every month (server-side)
   async search(q) {
     const r = await this._json("/api/search?q=" + encodeURIComponent(q));

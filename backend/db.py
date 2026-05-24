@@ -61,6 +61,27 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 CREATE INDEX IF NOT EXISTS idx_notes_period ON notes(period);
 
+-- Recurring loan plans: a fixed monthly installment over a tenure starting at
+-- start_period. Installments for each covered month are generated on the fly.
+CREATE TABLE IF NOT EXISTS loan_plans (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    name                TEXT    NOT NULL,
+    total_amount        REAL    NOT NULL DEFAULT 0,
+    tenure_months       INTEGER NOT NULL DEFAULT 1,
+    monthly_installment REAL    NOT NULL DEFAULT 0,
+    start_period        TEXT    NOT NULL,          -- 'YYYY-MM' of installment #1
+    created_at          TEXT
+);
+
+-- One row per installment the user has marked paid (manual mark-paid).
+CREATE TABLE IF NOT EXISTS loan_installment_payments (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id   INTEGER NOT NULL,
+    period    TEXT    NOT NULL,
+    paid_on   TEXT,
+    UNIQUE(plan_id, period)
+);
+
 CREATE INDEX IF NOT EXISTS idx_bills_period  ON bills(period);
 CREATE INDEX IF NOT EXISTS idx_meters_period ON meters(period);
 CREATE INDEX IF NOT EXISTS idx_loans_period  ON loans(period);
