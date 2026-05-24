@@ -7,8 +7,9 @@ Then open http://localhost:5000/
 import calendar
 import datetime
 import os
+from functools import wraps
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session
 from flask_cors import CORS
 
 from db import get_conn, init_db
@@ -16,7 +17,23 @@ from db import get_conn, init_db
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__, static_folder=ROOT, static_url_path="")
-CORS(app)
+# Signs the session cookie. Set DINERO_SECRET in any real deployment.
+app.secret_key = os.environ.get("DINERO_SECRET", "dinero-dev-secret-change-me")
+CORS(app, supports_credentials=True)
+
+# Admin credentials for the loan-plan section (env-overridable). This is a basic
+# gate, not hardened auth — see README/notes.
+ADMIN_USER = os.environ.get("DINERO_ADMIN_USER", "admin")
+ADMIN_PASSWORD = os.environ.get("DINERO_ADMIN_PASSWORD", "admin")
+
+
+def require_admin(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get("admin"):
+            return jsonify({"error": "authentication required"}), 401
+        return fn(*args, **kwargs)
+    return wrapper
 
 MONTH_NAMES = ["", "January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
@@ -162,6 +179,27 @@ def next_order(conn, table, period):
 @app.route("/")
 def index():
     return send_from_directory(ROOT, "Dinero.html")
+
+
+# ─── admin auth (gates the loan-plan routes) ─────────────────────────────────
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json(force=True)
+    if (data.get("username") or "") == ADMIN_USER and (data.get("password") or "") == ADMIN_PASSWORD:
+        session["admin"] = True
+        return jsonify({"admin": True})
+    return jsonify({"admin": False, "error": "invalid credentials"}), 401
+
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    session.pop("admin", None)
+    return jsonify({"admin": False})
+
+
+@app.route("/api/me")
+def me():
+    return jsonify({"admin": bool(session.get("admin"))})
 
 
 # ─── month listing & navigation ──────────────────────────────────────────────
@@ -549,6 +587,7 @@ def _plan_fields(data):
 
 
 @app.route("/api/loan-plans")
+@require_admin
 def list_loan_plans():
     conn = get_conn()
     try:
@@ -561,6 +600,7 @@ def list_loan_plans():
 
 
 @app.route("/api/loan-plans", methods=["POST"])
+@require_admin
 def create_loan_plan():
     name, total, tenure, monthly, start = _plan_fields(request.get_json(force=True))
     conn = get_conn()
@@ -578,6 +618,7 @@ def create_loan_plan():
 
 
 @app.route("/api/loan-plans/<int:plan_id>", methods=["PUT"])
+@require_admin
 def update_loan_plan(plan_id):
     name, total, tenure, monthly, start = _plan_fields(request.get_json(force=True))
     conn = get_conn()
@@ -597,6 +638,7 @@ def update_loan_plan(plan_id):
 
 
 @app.route("/api/loan-plans/<int:plan_id>", methods=["DELETE"])
+@require_admin
 def delete_loan_plan(plan_id):
     conn = get_conn()
     try:

@@ -206,6 +206,7 @@ function App() {
         authed={adminAuthed}
         onLogin={() => setAdminAuthed(true)}
         onExit={() => setView("dashboard")}
+        onLogout={async () => { await DA.adminLogout(); setAdminAuthed(false); setView("dashboard"); }}
       />
     );
   }

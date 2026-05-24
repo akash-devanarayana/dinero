@@ -33,7 +33,21 @@ def test_bill_crud_roundtrip():
     assert not any(i["name"] == "CI Test" for i in items)
 
 
+def test_admin_routes_require_auth():
+    anon = appmod.app.test_client()                          # no session
+    assert anon.get("/api/loan-plans").status_code == 401
+    assert anon.post("/api/loan-plans", json={"name": "x", "tenure": 1, "monthly": 1}).status_code == 401
+    # the dashboard installment toggle is NOT an admin route — stays open
+    assert anon.post("/api/loan-plans/999/installment",
+                     json={"period": "2099-01", "paid": False}).status_code == 200
+    # bad creds rejected, good creds unlock the admin routes (cookie persists on the client)
+    assert anon.post("/api/login", json={"username": "admin", "password": "wrong"}).status_code == 401
+    assert anon.post("/api/login", json={"username": "admin", "password": "admin"}).status_code == 200
+    assert anon.get("/api/loan-plans").status_code == 200
+
+
 def test_loan_plan_installments_window_and_mark_paid():
+    assert client.post("/api/login", json={"username": "admin", "password": "admin"}).status_code == 200
     r = client.post("/api/loan-plans", json={"name": "CI Loan", "totalAmount": 1200,
                                              "tenure": 3, "monthly": 400, "startPeriod": "2099-03"})
     assert r.status_code == 201
