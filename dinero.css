@@ -1441,3 +1441,156 @@ input, select, textarea { font-family: inherit; }
 
 /* tweaks panel override (override its handwritten font) */
 .twk-panel { font-family: var(--sans) !important; color: var(--ink) !important; }
+
+/* ─────────────────────────────────────────────────────────────
+   Motion system — gated on [data-motion="on"] + reduced-motion
+   ───────────────────────────────────────────────────────────── */
+.app {
+  --mo-mult: 1;
+  --mo-d: calc(0.55s * var(--mo-mult));
+  --mo-st: calc(0.055s * var(--mo-mult));
+  --mo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes mo-rise  { from { opacity: 0; transform: translateY(16px); } }
+@keyframes mo-fade  { from { opacity: 0; } }
+@keyframes mo-scale { from { opacity: 0; transform: scale(0.965); } }
+@keyframes mo-sweep { from { opacity: 0; transform: translateX(-12px); } }
+@keyframes mo-barfill { from { width: 0; } }
+@keyframes mo-growv   { from { height: 0; } }
+@keyframes mo-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.25); }
+}
+
+.app[data-motion-style="rise"]  { --mo-anim: mo-rise; }
+.app[data-motion-style="fade"]  { --mo-anim: mo-fade; }
+.app[data-motion-style="scale"] { --mo-anim: mo-scale; }
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* ── Entrance: page chrome ── */
+  [data-motion="on"] .app-head {
+    animation: mo-fade calc(var(--mo-d) * 0.8) var(--mo-ease) both;
+  }
+  [data-motion="on"] .foot {
+    animation: mo-fade var(--mo-d) var(--mo-ease) both;
+    animation-delay: calc(var(--mo-st) * 10);
+  }
+
+  /* ── Entrance: sidebar cascade ── */
+  [data-motion="on"] .sidebar > * {
+    animation: var(--mo-anim, mo-rise) var(--mo-d) var(--mo-ease) both;
+  }
+  [data-motion="on"] .sidebar > *:nth-child(1) { animation-delay: calc(var(--mo-st) * 0); }
+  [data-motion="on"] .sidebar > *:nth-child(2) { animation-delay: calc(var(--mo-st) * 1); }
+  [data-motion="on"] .sidebar > *:nth-child(3) { animation-delay: calc(var(--mo-st) * 2); }
+  [data-motion="on"] .sidebar > *:nth-child(4) { animation-delay: calc(var(--mo-st) * 3); }
+  [data-motion="on"] .sidebar > *:nth-child(5) { animation-delay: calc(var(--mo-st) * 4); }
+  [data-motion="on"] .sidebar > *:nth-child(6) { animation-delay: calc(var(--mo-st) * 5); }
+  [data-motion="on"] .sidebar > *:nth-child(7) { animation-delay: calc(var(--mo-st) * 6); }
+
+  /* ── Entrance: main cards cascade ── */
+  [data-motion="on"] .main > .card {
+    animation: var(--mo-anim, mo-rise) var(--mo-d) var(--mo-ease) both;
+    animation-delay: calc(var(--mo-st) * 2);
+  }
+  [data-motion="on"] .main-cols > div > * {
+    animation: var(--mo-anim, mo-rise) var(--mo-d) var(--mo-ease) both;
+  }
+  [data-motion="on"] .main-cols > div > *:nth-child(1) { animation-delay: calc(var(--mo-st) * 4); }
+  [data-motion="on"] .main-cols > div > *:nth-child(2) { animation-delay: calc(var(--mo-st) * 6); }
+  [data-motion="on"] .main-cols > div > *:nth-child(3) { animation-delay: calc(var(--mo-st) * 8); }
+
+  /* ── Entrance: rows sweep in within cards ── */
+  [data-motion="on"] .bills .bill-row,
+  [data-motion="on"] .bills .meter-row {
+    animation: mo-sweep calc(var(--mo-d) * 0.85) var(--mo-ease) both;
+    animation-delay: calc(var(--mo-st) * 6);
+  }
+  [data-motion="on"] .bills .bill-row:nth-child(2),
+  [data-motion="on"] .bills .meter-row:nth-child(1) { animation-delay: calc(var(--mo-st) * 7); }
+  [data-motion="on"] .bills .bill-row:nth-child(3),
+  [data-motion="on"] .bills .meter-row:nth-child(2) { animation-delay: calc(var(--mo-st) * 8); }
+  [data-motion="on"] .bills .bill-row:nth-child(4),
+  [data-motion="on"] .bills .meter-row:nth-child(3) { animation-delay: calc(var(--mo-st) * 9); }
+  [data-motion="on"] .bills .bill-row:nth-child(5) { animation-delay: calc(var(--mo-st) * 10); }
+  [data-motion="on"] .bills .bill-row:nth-child(6) { animation-delay: calc(var(--mo-st) * 11); }
+  [data-motion="on"] .bills .bill-row:nth-child(7) { animation-delay: calc(var(--mo-st) * 12); }
+  [data-motion="on"] .bills .bill-row:nth-child(n+8) { animation-delay: calc(var(--mo-st) * 13); }
+
+  /* ── Entrance: week strip days ── */
+  [data-motion="on"] .week-grid .week-day {
+    animation: var(--mo-anim, mo-rise) calc(var(--mo-d) * 0.8) var(--mo-ease) both;
+  }
+  [data-motion="on"] .week-grid .week-day:nth-child(1)  { animation-delay: calc(var(--mo-st) * 3); }
+  [data-motion="on"] .week-grid .week-day:nth-child(2)  { animation-delay: calc(var(--mo-st) * 4); }
+  [data-motion="on"] .week-grid .week-day:nth-child(3)  { animation-delay: calc(var(--mo-st) * 5); }
+  [data-motion="on"] .week-grid .week-day:nth-child(4)  { animation-delay: calc(var(--mo-st) * 6); }
+  [data-motion="on"] .week-grid .week-day:nth-child(5)  { animation-delay: calc(var(--mo-st) * 7); }
+  [data-motion="on"] .week-grid .week-day:nth-child(6)  { animation-delay: calc(var(--mo-st) * 8); }
+  [data-motion="on"] .week-grid .week-day:nth-child(7)  { animation-delay: calc(var(--mo-st) * 9); }
+  [data-motion="on"] .week-grid .week-day:nth-child(n+8) { animation-delay: calc(var(--mo-st) * 10); }
+
+  /* ── Bars fill from zero ── */
+  [data-motion="on"] .sb-progress .fill,
+  [data-motion="on"] .sb-hero .pbar > div {
+    animation: mo-barfill calc(var(--mo-d) * 1.7) var(--mo-ease) both;
+    animation-delay: calc(var(--mo-st) * 5);
+  }
+  [data-motion="on"] .sb-trend .spk i {
+    animation: mo-growv calc(var(--mo-d) * 1.4) var(--mo-ease) both;
+  }
+  [data-motion="on"] .sb-trend .spk i:nth-child(1) { animation-delay: calc(var(--mo-st) * 6); }
+  [data-motion="on"] .sb-trend .spk i:nth-child(2) { animation-delay: calc(var(--mo-st) * 7); }
+  [data-motion="on"] .sb-trend .spk i:nth-child(3) { animation-delay: calc(var(--mo-st) * 8); }
+  [data-motion="on"] .sb-trend .spk i:nth-child(4) { animation-delay: calc(var(--mo-st) * 9); }
+  [data-motion="on"] .sb-trend .spk i:nth-child(5) { animation-delay: calc(var(--mo-st) * 10); }
+  [data-motion="on"] .sb-trend .spk i:nth-child(6) { animation-delay: calc(var(--mo-st) * 11); }
+
+  /* ── Overdue pulse (subtle, decorative) ── */
+  [data-motion="on"][data-motion-pulse="on"] .sb-overdue .ic {
+    animation: mo-pulse 2.4s ease-in-out infinite;
+    animation-delay: calc(var(--mo-d) * 2);
+  }
+  [data-motion="on"][data-motion-pulse="on"] .pill.over .dot {
+    animation: mo-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* ── Hover micro-motion ── */
+  [data-motion="on"][data-motion-hover="on"] .bill-row,
+  [data-motion="on"][data-motion-hover="on"] .meter-row {
+    transition: background 0.12s, transform 0.18s var(--mo-ease);
+  }
+  [data-motion="on"][data-motion-hover="on"] .bill-row:hover,
+  [data-motion="on"][data-motion-hover="on"] .meter-row:hover {
+    transform: translateX(3px);
+  }
+  [data-motion="on"][data-motion-hover="on"] .week-day {
+    transition: transform 0.18s var(--mo-ease), border-color 0.12s;
+  }
+  [data-motion="on"][data-motion-hover="on"] .week-day:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-strong);
+  }
+  [data-motion="on"][data-motion-hover="on"] .card {
+    transition: box-shadow 0.25s var(--mo-ease);
+  }
+  [data-motion="on"][data-motion-hover="on"] .card:hover {
+    box-shadow: 0 4px 16px rgba(26, 24, 20, 0.05);
+  }
+  [data-motion="on"][data-motion-hover="on"] .btn-icon:active,
+  [data-motion="on"][data-motion-hover="on"] .ghost-add:active,
+  [data-motion="on"][data-motion-hover="on"] .sb-add .main:active {
+    transform: scale(0.95);
+  }
+  [data-motion="on"][data-motion-hover="on"] .sb-cats li {
+    transition: background 0.12s, transform 0.15s var(--mo-ease);
+  }
+  [data-motion="on"][data-motion-hover="on"] .sb-cats li:hover {
+    transform: translateX(2px);
+  }
+}
+
+/* count-up number: tabular numerals so width doesn't jitter mid-animation */
+.countup { font-variant-numeric: tabular-nums; }

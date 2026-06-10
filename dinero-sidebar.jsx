@@ -20,7 +20,7 @@ function pipsFor(items) {
 }
 
 function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill,
-                   filter, onFilter, statusFilter, onStatus, onClear }) {
+                   filter, onFilter, statusFilter, onStatus, onClear, countUp }) {
   const pick = (key) => onFilter(filter === key ? "all" : key);
   const cls = (base, key) => base + (filter === key ? " active" : "");
   const STATUSES = [["all", "All"], ["unpaid", "Unpaid"], ["over", "Overdue"], ["paid", "Paid"]];
@@ -98,7 +98,10 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill,
           <span className="aside">this month</span>
         </div>
         <div className="big">
-          <span className="cur">{Ds.CURRENCY}</span>{Math.round(owed).toLocaleString("en-LK")}
+          <span className="cur">{Ds.CURRENCY}</span>
+          {countUp && window.CountUp
+            ? <window.CountUp value={Math.round(owed)} />
+            : Math.round(owed).toLocaleString("en-LK")}
         </div>
         <div className="secondary">
           of <b>{Ds.fmtInt(total)}</b> total · <b>{Math.round(paidPct)}%</b> paid

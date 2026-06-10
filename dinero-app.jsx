@@ -7,6 +7,12 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#2d5f4f",
   "density": "regular",
   "previewModal": "none",
+  "motionOn": true,
+  "motionStyle": "rise",
+  "motionSpeed": 1,
+  "motionCountUp": true,
+  "motionHover": true,
+  "motionPulse": true,
   "showCards": true,
   "showUtilities": true,
   "showSubs": true,
@@ -42,6 +48,7 @@ function App() {
   const [statusFilter, setStatusFilter] = useStateA("all");
   const [view, setView] = useStateA("dashboard");
   const [adminAuthed, setAdminAuthed] = useStateA(false);
+  const [replayKey, setReplayKey] = useStateA(0);
   const [theme, setTheme] = useStateA(() =>
     document.documentElement.getAttribute("data-theme")
     || (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
@@ -211,8 +218,20 @@ function App() {
     );
   }
 
+  // Re-mounting the sidebar/main replays the entrance cascade: on the
+  // "Replay entrance" tweak, on month navigation, and on filter changes.
+  const moKey = replayKey + "-" + (DA.period || "boot");
+  const mainKey = moKey + "-" + filter + "-" + statusFilter;
+
   return (
-    <div className="app">
+    <div
+      className="app"
+      data-motion={t.motionOn ? "on" : "off"}
+      data-motion-style={t.motionStyle}
+      data-motion-hover={t.motionHover ? "on" : "off"}
+      data-motion-pulse={t.motionPulse ? "on" : "off"}
+      style={{ "--mo-mult": t.motionSpeed }}
+    >
       <header className="app-head">
         <div className="brand"><span className="brand-dot"></span>Dinero</div>
         <span className="breadcrumb">
@@ -235,6 +254,7 @@ function App() {
       </header>
 
       <Sidebar
+        key={"sb-" + moKey}
         sections={sections}
         showTrend={t.showTrend}
         showMonthBar={t.showMonthBar}
@@ -245,9 +265,10 @@ function App() {
         statusFilter={statusFilter}
         onStatus={setStatusFilter}
         onClear={clearFilters}
+        countUp={t.motionOn && t.motionCountUp}
       />
 
-      <main className="main" data-screen-label="Dashboard">
+      <main key={"m-" + mainKey} className="main" data-screen-label="Dashboard">
         {t.showWeek && <WeekStrip days={t.weekDays} onEdit={editModal} />}
 
         {anyVisible ? (
@@ -325,6 +346,25 @@ function App() {
       )}
 
       <TweaksPanel title="Tweaks">
+        <TweakSection label="Motion" />
+        <TweakToggle label="Motion" value={t.motionOn} onChange={(v) => setTweak("motionOn", v)} />
+        <TweakRadio
+          label="Entrance"
+          value={t.motionStyle}
+          options={[
+            { value: "rise",  label: "Rise" },
+            { value: "fade",  label: "Fade" },
+            { value: "scale", label: "Scale" },
+          ]}
+          onChange={(v) => setTweak("motionStyle", v)}
+        />
+        <TweakSlider label="Tempo" value={t.motionSpeed} min={0.5} max={2} step={0.25} unit="×"
+                     onChange={(v) => setTweak("motionSpeed", v)} />
+        <TweakToggle label="Count-up numbers" value={t.motionCountUp} onChange={(v) => setTweak("motionCountUp", v)} />
+        <TweakToggle label="Hover motion"     value={t.motionHover}   onChange={(v) => setTweak("motionHover", v)} />
+        <TweakToggle label="Overdue pulse"    value={t.motionPulse}   onChange={(v) => setTweak("motionPulse", v)} />
+        <TweakButton label="Replay entrance" onClick={() => setReplayKey(k => k + 1)} />
+
         <TweakSection label="Theme" />
         <TweakColor
           label="Accent"
