@@ -1,6 +1,8 @@
-// Bundle entry — imports the app scripts in their original load order.
-// Each file communicates through window globals (no exports), so order matters:
-// it mirrors the former <script type="text/babel"> sequence in Dinero.html.
+// Bundle entry — sets up the React globals first, then imports the app
+// scripts in their original load order. Each file communicates through
+// window globals (no exports), so order matters: it mirrors the former
+// <script type="text/babel"> sequence in Dinero.html.
+import "./react-globals.js";
 import "./tweaks-panel.jsx";
 import "./data.jsx";
 import "./dinero-icons.jsx";
