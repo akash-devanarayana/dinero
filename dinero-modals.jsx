@@ -407,4 +407,7 @@ const MODAL_MAP = {
   loan:         { Component: LoanModal,         label: "Add loan" },
 };
 
-Object.assign(window, { Modal, Field, Seg, EditFooter, ModalMeta, MODAL_MAP });
+// reqText/numCheck are shared with dinero-admin.jsx — under the old in-browser
+// Babel they leaked into the global scope implicitly; as bundled modules they
+// must be exported explicitly.
+Object.assign(window, { Modal, Field, Seg, EditFooter, ModalMeta, MODAL_MAP, reqText, numCheck });

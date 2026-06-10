@@ -5,10 +5,15 @@
   "description": "Personal expense tracker — frontend bundle build",
   "scripts": {
     "build": "esbuild dinero-entry.js --bundle --outfile=dist/dinero.js --minify --sourcemap",
-    "watch": "esbuild dinero-entry.js --bundle --outfile=dist/dinero.js --sourcemap --watch"
+    "watch": "esbuild dinero-entry.js --bundle --outfile=dist/dinero.js --sourcemap --watch",
+    "lint": "eslint *.js *.jsx"
   },
   "devDependencies": {
-    "esbuild": "^0.27.2"
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0"
   },
   "dependencies": {
     "react": "^18.3.1",
