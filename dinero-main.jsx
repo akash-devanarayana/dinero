@@ -140,7 +140,7 @@ function BillSection({ title, subtitle, items, totals, totalsLine, kind, onEdit,
       </div>
       <div className="card-foot">
         <button className="ghost-add" type="button" onClick={onAdd}>
-          <IconN.Plus /> Add {title.toLowerCase().replace(/s$/, "")}
+          <IconN.Plus /> Add {kind}
         </button>
       </div>
     </SectionCard>
