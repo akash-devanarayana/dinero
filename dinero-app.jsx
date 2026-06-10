@@ -268,7 +268,18 @@ function App() {
         countUp={t.motionOn && t.motionCountUp}
       />
 
-      <main key={"m-" + mainKey} className="main" data-screen-label="Dashboard">
+      <main key={"m-" + mainKey} className="main"
+            data-screen-label={filter === "all" ? "Dashboard" : "Filter — " + filter}>
+        {filter !== "all" && window.FilterView ? (
+          <window.FilterView
+            catKey={filter}
+            onClear={clearFilters}
+            onEdit={editModal}
+            onAdd={openModal}
+            onMarkPaid={handleMarkPaid}
+          />
+        ) : (
+        <>
         {t.showWeek && <WeekStrip days={t.weekDays} onEdit={editModal} />}
 
         {anyVisible ? (
@@ -326,6 +337,8 @@ function App() {
             <div>No items match this filter.</div>
             <button className="btn btn-ghost" type="button" onClick={clearFilters}>Clear filters</button>
           </div>
+        )}
+        </>
         )}
       </main>
 

@@ -181,7 +181,9 @@ function Sidebar({ sections, showTrend, showMonthBar, showOverdue, onAddBill,
             </li>
           )}
         </ul>
-        {filter !== "loans" && filter !== "meters" && (
+        {/* status quick-filter applies to the dashboard only; the filter
+            view has its own status chips */}
+        {filter === "all" && (
           <div className="sb-status">
             {STATUSES.map(([v, label]) => (
               <button key={v} type="button"
