@@ -1,0 +1,109 @@
+/* ─────────────────────────────────────────────────────────────
+   Dinero — design tokens & components
+   ─────────────────────────────────────────────────────────── */
+
+:root {
+  /* surfaces */
+  --bg:           #fbfaf7;
+  --surface:      #ffffff;
+  --surface-2:   #f5f3ee;
+  --surface-hover: #f9f7f3;
+
+  /* ink */
+  --ink:          #1a1814;
+  --ink-2:        #5c5650;
+  --ink-3:        #a09a92;
+  --ink-4:        #cbc6bd;
+
+  /* borders */
+  --line:         rgba(26, 24, 20, 0.07);
+  --line-strong:  rgba(26, 24, 20, 0.14);
+
+  /* accent */
+  --accent:       #2d5f4f;
+  --accent-soft:  rgba(45, 95, 79, 0.08);
+  --accent-ink:   #1f4337;
+
+  /* status */
+  --paid:         #2d5f4f;
+  --paid-soft:    rgba(45, 95, 79, 0.10);
+  --due:          #b0832d;
+  --due-soft:     rgba(176, 131, 45, 0.10);
+  --over:         #a8473e;
+  --over-soft:    rgba(168, 71, 62, 0.10);
+  --na:           #a09a92;
+  --na-soft:      rgba(160, 154, 146, 0.10);
+
+  /* type */
+  --serif:        "Instrument Serif", "Cormorant Garamond", Georgia, serif;
+  --sans:         "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono:         "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* spacing scale (px) */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px;
+  --s-4: 16px; --s-5: 20px; --s-6: 24px;
+  --s-7: 32px; --s-8: 40px; --s-9: 56px;
+
+  /* radii */
+  --r-1: 6px;  --r-2: 10px; --r-3: 14px; --r-4: 18px;
+
+  /* shadow */
+  --sh-1: 0 1px 0 rgba(26,24,20,.04), 0 0 0 1px var(--line);
+  --sh-2: 0 1px 2px rgba(26,24,20,.04), 0 0 0 1px var(--line);
+  --sh-3: 0 8px 24px rgba(26,24,20,.08), 0 2px 6px rgba(26,24,20,.04), 0 0 0 1px var(--line);
+  --sh-modal: 0 24px 80px rgba(26,24,20,.18), 0 8px 24px rgba(26,24,20,.10), 0 0 0 1px var(--line);
+}
+
+/* density */
+[data-density="compact"] {
+  --s-4: 12px; --s-5: 16px; --s-6: 18px; --s-7: 24px; --s-8: 32px;
+}
+
+/* dark theme — neutral tokens flip; accent/paid vars are set inline (theme-aware)
+   in dinero-app.jsx, and the translucent status -soft colors adapt on their own */
+[data-theme="dark"] {
+  --bg:            #14120e;
+  --surface:       #1e1b16;
+  --surface-2:     #29251d;
+  --surface-hover: #242019;
+
+  --ink:           #ece7dd;
+  --ink-2:         #b1a99c;
+  --ink-3:         #847c6f;
+  --ink-4:         #585249;
+
+  --line:          rgba(236, 231, 221, 0.10);
+  --line-strong:   rgba(236, 231, 221, 0.22);
+
+  --due:           #d6a64f;
+  --due-soft:      rgba(214, 166, 79, 0.16);
+  --over:          #d97469;
+  --over-soft:     rgba(217, 116, 105, 0.16);
+  --na:            #847c6f;
+  --na-soft:       rgba(132, 124, 111, 0.16);
+
+  --sh-1: 0 1px 0 rgba(0,0,0,.30), 0 0 0 1px var(--line);
+  --sh-2: 0 1px 2px rgba(0,0,0,.40), 0 0 0 1px var(--line);
+  --sh-3: 0 8px 24px rgba(0,0,0,.50), 0 2px 6px rgba(0,0,0,.30), 0 0 0 1px var(--line);
+  --sh-modal: 0 24px 80px rgba(0,0,0,.62), 0 8px 24px rgba(0,0,0,.42), 0 0 0 1px var(--line);
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11";
+}
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+::selection { background: var(--accent-soft); color: var(--accent-ink); }
+

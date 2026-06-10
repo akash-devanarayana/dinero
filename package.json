@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "Personal expense tracker — frontend bundle build",
   "scripts": {
-    "build": "esbuild dinero-entry.js --bundle --outfile=dist/dinero.js --minify --sourcemap",
-    "watch": "esbuild dinero-entry.js --bundle --outfile=dist/dinero.js --sourcemap --watch",
+    "build": "esbuild dinero-entry.js styles/index.css --bundle --entry-names=dinero --outdir=dist --minify --sourcemap",
+    "watch": "esbuild dinero-entry.js styles/index.css --bundle --entry-names=dinero --outdir=dist --sourcemap --watch",
     "lint": "eslint *.js *.jsx"
   },
   "devDependencies": {
