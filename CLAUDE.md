@@ -34,13 +34,15 @@ React root to re-render.
 
 ## Styling
 
-- All styling lives in `dinero.css` using the design tokens defined in
-  `:root` (surfaces, ink scale, status colors, spacing/radius scales, fonts).
-  Never hardcode a color that has a token; dark mode works by re-declaring the
-  tokens under `[data-theme="dark"]`.
+- Styling lives in `styles/*.css`, bundled to `dist/dinero.css` via
+  `styles/index.css` — **import order preserves the cascade; don't reorder**.
+  Design tokens are defined in `styles/tokens.css` `:root` (surfaces, ink
+  scale, status colors, spacing/radius scales, fonts). Never hardcode a color
+  that has a token; dark mode works by re-declaring the tokens under
+  `[data-theme="dark"]`.
 - Status values are a fixed enum: `paid | due | over | na` — CSS classes,
   pills, pips, and stripes all key off these strings.
-- The motion system (end of the CSS) derives every duration from `--mo-d` and
+- The motion system (`styles/motion.css`) derives every duration from `--mo-d` and
   `--mo-st`, is gated behind `[data-motion="on"]` **and**
   `prefers-reduced-motion`, and animates FROM hidden TO natural state
   (keyframes define only the `from`). New animations must follow all three
@@ -49,7 +51,7 @@ React root to re-render.
 ## Dev workflow
 
 ```bash
-npm install && npm run watch      # rebuild dist/dinero.js on save
+npm install && npm run watch      # rebuild dist/dinero.{js,css} on save
 python backend/app.py             # serves app + API on :5000 (honors PORT)
 pytest -q                         # backend tests (isolated temp DB)
 ```

@@ -44,6 +44,6 @@ a data-file guard on every pull request.
 | Path | What |
 | --- | --- |
 | `backend/` | Flask API, SQLite schema (`db.py`), Excel importer |
-| `Dinero.html`, `*.jsx`, `dinero.css` | Frontend (bundled to `dist/dinero.js` by esbuild) |
+| `Dinero.html`, `*.jsx`, `styles/*.css` | Frontend (bundled to `dist/dinero.{js,css}` by esbuild) |
 | `tests/` | Backend tests run in CI |
 | `.github/workflows/ci.yml` | CI pipeline |
