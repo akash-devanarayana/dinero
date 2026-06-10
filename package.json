@@ -6,7 +6,8 @@
   "scripts": {
     "build": "esbuild dinero-entry.js styles/index.css --bundle --entry-names=dinero --outdir=dist --minify --sourcemap",
     "watch": "esbuild dinero-entry.js styles/index.css --bundle --entry-names=dinero --outdir=dist --sourcemap --watch",
-    "lint": "eslint *.js *.jsx"
+    "lint": "eslint *.js *.jsx",
+    "app": "npm run build && python -m PyInstaller dinero.spec --distpath dist-app --noconfirm"
   },
   "devDependencies": {
     "esbuild": "^0.27.2",

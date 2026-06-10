@@ -7,6 +7,7 @@ Then open http://localhost:5000/
 import calendar
 import datetime
 import os
+import sys
 from functools import wraps
 
 from flask import Flask, jsonify, request, send_from_directory, session
@@ -14,7 +15,12 @@ from flask_cors import CORS
 
 from db import get_conn, init_db
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Frontend root: the repo root in dev, the PyInstaller extraction dir when
+# running as the frozen desktop app (static files are bundled there).
+if getattr(sys, "frozen", False):
+    ROOT = sys._MEIPASS
+else:
+    ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__, static_folder=ROOT, static_url_path="")
 # Signs the session cookie. Set DINERO_SECRET in any real deployment.
