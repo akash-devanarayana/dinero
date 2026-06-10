@@ -1,7 +1,7 @@
 /* global React */
 // Filter view — full-page category drill-down (hero, status chips, sort, rows).
 // Rendered in place of the dashboard when a sidebar category is selected.
-const { useState: useStateF, useMemo: useMemoF } = React;
+const { useState: useStateF } = React;
 const DF = window.DINERO;
 const IconF = window.Icon;
 
@@ -313,25 +313,24 @@ function FilterView({ catKey, onClear, onEdit, onAdd, onMarkPaid }) {
       paid: stats.paidCount, due: stats.dueCount, over: stats.overCount, na: stats.naCount,
     };
 
-    const filtered = useMemoF(() => {
-      let arr = status === "all" ? allItems : allItems.filter(i => i.status === status);
-      const STATUS_ORDER = { over: 0, due: 1, paid: 2, na: 3 };
-      if (sort === "status") {
-        arr = [...arr].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
-      } else if (sort === "amount") {
-        arr = [...arr].sort((a, b) => (b.amount || 0) - (a.amount || 0));
-      } else if (sort === "name") {
-        arr = [...arr].sort((a, b) => a.name.localeCompare(b.name));
-      } else { // due
-        arr = [...arr].sort((a, b) => {
-          if (!a.due && !b.due) return 0;
-          if (!a.due) return 1;
-          if (!b.due) return -1;
-          return new Date(a.due) - new Date(b.due);
-        });
-      }
-      return arr;
-    }, [status, sort, allItems]);
+    // computed inline (lists are tiny) — a useMemo here would be a
+    // conditionally-called hook since this branch depends on cfg.type
+    let filtered = status === "all" ? allItems : allItems.filter(i => i.status === status);
+    const STATUS_ORDER = { over: 0, due: 1, paid: 2, na: 3 };
+    if (sort === "status") {
+      filtered = [...filtered].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+    } else if (sort === "amount") {
+      filtered = [...filtered].sort((a, b) => (b.amount || 0) - (a.amount || 0));
+    } else if (sort === "name") {
+      filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    } else { // due
+      filtered = [...filtered].sort((a, b) => {
+        if (!a.due && !b.due) return 0;
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        return new Date(a.due) - new Date(b.due);
+      });
+    }
 
     const pctPaid = stats.total ? (stats.paid / stats.total) * 100 : 0;
     const pctDue  = stats.total ? (stats.due  / stats.total) * 100 : 0;
