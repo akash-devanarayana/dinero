@@ -10,6 +10,10 @@ backend/dinero.db
 node_modules/
 dist/
 
+# ─── Desktop app build (PyInstaller) ─────────────────────────
+dist-app/
+build/
+
 # ─── Python ──────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

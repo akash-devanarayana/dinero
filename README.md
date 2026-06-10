@@ -18,6 +18,18 @@ python backend/app.py             # serves the app + API at http://localhost:500
 Then open <http://localhost:5000>. While working on the frontend, run
 `npm run watch` to rebuild the bundle on every save.
 
+## Desktop app
+
+```bash
+pip install -r requirements-desktop.txt
+npm run app                       # builds dist-app/Dinero.exe (PyInstaller)
+```
+
+`Dinero.exe` opens the app in a native window (Edge WebView2) with the
+backend embedded — no browser or terminal. The frozen app keeps its database
+in `%APPDATA%\Dinero\dinero.db`, separate from the dev DB. For development,
+`python backend/desktop.py` runs the same window against the repo files.
+
 > The source spreadsheet and the SQLite database are gitignored (they hold
 > personal data), so a fresh clone starts empty — supply your own
 > `2024-2025-2026 _ Monthly Expenses.xlsx` and run the importer, or just add
