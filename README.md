@@ -4,17 +4,19 @@
 
 A personal monthly expense tracker — cards, utilities, subscriptions, meter
 readings, loans, and notes — with a Flask + SQLite backend and a React frontend
-(transpiled in the browser via Babel, no build step).
+(JSX pre-bundled with esbuild).
 
 ## Run
 
 ```bash
+npm install && npm run build      # bundle the frontend (dist/dinero.js)
 pip install -r backend/requirements.txt
 python backend/import_excel.py    # one-time: seed history from your Excel workbook
 python backend/app.py             # serves the app + API at http://localhost:5000
 ```
 
-Then open <http://localhost:5000>.
+Then open <http://localhost:5000>. While working on the frontend, run
+`npm run watch` to rebuild the bundle on every save.
 
 > The source spreadsheet and the SQLite database are gitignored (they hold
 > personal data), so a fresh clone starts empty — supply your own
@@ -34,14 +36,14 @@ Then open <http://localhost:5000>.
 pytest -q
 ```
 
-CI (GitHub Actions) runs the tests, a Python lint, a `.jsx` syntax check, and a
-data-file guard on every pull request.
+CI (GitHub Actions) runs the tests, a Python lint, a frontend bundle build, and
+a data-file guard on every pull request.
 
 ## Layout
 
 | Path | What |
 | --- | --- |
 | `backend/` | Flask API, SQLite schema (`db.py`), Excel importer |
-| `Dinero.html`, `*.jsx`, `dinero.css` | Frontend (in-browser Babel) |
+| `Dinero.html`, `*.jsx`, `dinero.css` | Frontend (bundled to `dist/dinero.js` by esbuild) |
 | `tests/` | Backend tests run in CI |
 | `.github/workflows/ci.yml` | CI pipeline |

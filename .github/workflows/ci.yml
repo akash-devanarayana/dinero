@@ -29,10 +29,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install parser
-        run: npm install @babel/parser
-      - name: JSX parse check
-        run: node .github/scripts/check-jsx.js
+      - name: Install deps
+        run: npm ci
+      - name: Build bundle
+        run: npm run build
 
   guard:
     name: guard
