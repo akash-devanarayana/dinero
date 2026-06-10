@@ -218,15 +218,72 @@ def list_months():
     })
 
 
+CADENCE_MONTHS = {"monthly": 1, "quarterly": 3, "yearly": 12}
+
+
+def add_months(iso_date, n):
+    """Shift an ISO date by n months, clamping the day to the target month."""
+    d = datetime.date.fromisoformat(iso_date)
+    y, m = d.year + (d.month - 1 + n) // 12, (d.month - 1 + n) % 12 + 1
+    return datetime.date(y, m, min(d.day, calendar.monthrange(y, m)[1])).isoformat()
+
+
+def next_due_in(due_date, cadence, new_period):
+    """Advance a due date by its cadence until it reaches `new_period` or later.
+    Returns (date, falls_in_period)."""
+    step = CADENCE_MONTHS.get(cadence or "monthly", 1)
+    occ = due_date
+    while occ[:7] < new_period:
+        occ = add_months(occ, step)
+    return occ, occ[:7] == new_period
+
+
+def seed_month_from(conn, src_period, new_period):
+    """Copy recurring bills from src_period into the (empty) new month.
+
+    Subscriptions are fixed-price recurring charges: they carry their amount
+    and come back as 'due', with the due date advanced by their cadence.
+    Cards and utilities recur but their amount is unknown until the statement
+    or bill arrives, so they come back as 'na' placeholders with no amount or
+    due date. Payment fields are always cleared.
+    """
+    existing = conn.execute(
+        "SELECT COUNT(*) AS n FROM bills WHERE period = ?", (new_period,)
+    ).fetchone()["n"]
+    if existing:
+        return
+    for r in conn.execute(
+        "SELECT * FROM bills WHERE period = ? ORDER BY sort_order, id", (src_period,)
+    ):
+        if r["category"] == "Subscription":
+            amount, status, due = r["amount"], "due", None
+            if r["due_date"]:
+                due, in_month = next_due_in(r["due_date"], r["cadence"], new_period)
+                if not in_month:          # quarterly/yearly not billed this month
+                    status = "na"
+        else:                             # Card / Utility — wait for the statement
+            amount, status, due = 0, "na", None
+        conn.execute(
+            """INSERT INTO bills (period, category, name, amount, min_amount, due_date,
+                                  status, payment_method, cadence, sort_order)
+               VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)""",
+            (new_period, r["category"], r["name"], amount, due, status,
+             r["payment_method"], r["cadence"], r["sort_order"]),
+        )
+
+
 @app.route("/api/months/next", methods=["POST"])
 def create_next_month():
-    """Create the (empty) month following the latest existing month."""
+    """Create the month following the latest existing month, seeded with the
+    recurring bills from that month."""
     conn = get_conn()
     try:
         periods = all_periods(conn)
         latest = periods[-1] if periods else current_period()
         new_period = next_period(latest)
         conn.execute("INSERT OR IGNORE INTO months (period) VALUES (?)", (new_period,))
+        if periods:
+            seed_month_from(conn, latest, new_period)
         conn.commit()
         periods = all_periods(conn)
     finally:
