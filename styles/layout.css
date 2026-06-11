@@ -1,6 +1,7 @@
 /* ─── Layout ───────────────────────────────────────────────── */
 
 .app {
+  --head-h: 53px;           /* header box height; sidebar sticks below it */
   max-width: 1320px;
   margin: 0 auto;
   padding: var(--s-7) var(--s-7) var(--s-9);
@@ -19,6 +20,15 @@
   margin-bottom: var(--s-3);
   white-space: nowrap;
   flex-wrap: nowrap;
+  /* stick to the top while scrolling; the added top padding (negated by the
+     margin) gives breathing room once pinned, and the page-background fill
+     keeps content from showing through. */
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding-top: var(--s-7);
+  margin-top: calc(-1 * var(--s-7));
 }
 .app-head .brand {
   font-family: var(--serif);
