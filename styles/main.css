@@ -356,6 +356,9 @@
 }
 .note-row:hover .note-del, .note-edit:focus + .note-del { opacity: 1; }
 .note-del:hover { background: var(--over-soft); color: var(--over); }
+/* armed = next click really deletes */
+.note-del.armed { background: var(--over); color: #fff; opacity: 1; }
+.note-del.armed:hover { background: var(--over); opacity: 0.92; }
 .note-del svg { width: 12px; height: 12px; }
 .note-empty { color: var(--ink-3); font-style: italic; border-left-color: transparent; }
 

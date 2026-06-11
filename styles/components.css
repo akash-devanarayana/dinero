@@ -94,6 +94,9 @@
   border-color: var(--over-soft);
 }
 .btn-danger:hover { background: var(--over-soft); border-color: var(--over); }
+/* armed = next click really deletes */
+.btn-danger.armed { background: var(--over); border-color: var(--over); color: #fff; }
+.btn-danger.armed:hover { background: var(--over); opacity: 0.92; }
 .btn svg { width: 14px; height: 14px; }
 
 .btn-sm {

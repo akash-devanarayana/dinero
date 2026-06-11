@@ -86,12 +86,22 @@ function Seg({ value, onChange, options }) {
 }
 
 function EditFooter({ editing, onClose, onSave, onDelete, saveLabel, ftnote }) {
+  // Two-step delete: first click arms the button, second click deletes.
+  // Disarms itself after a few seconds so a stale click can't destroy data.
+  const [armed, setArmed] = useStateM(false);
+  useEffectM(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
   return (
     <div className="modal-foot">
       {editing
-        ? <button className="btn btn-danger" type="button" onClick={onDelete}>Delete</button>
+        ? (armed
+          ? <button className="btn btn-danger armed" type="button" onClick={onDelete}>Confirm delete</button>
+          : <button className="btn btn-danger" type="button" onClick={() => setArmed(true)}>Delete</button>)
         : null}
-      <span className="ftnote">{ftnote}</span>
+      <span className="ftnote">{armed ? "Click again to permanently delete." : ftnote}</span>
       <button className="btn btn-ghost" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn-primary" type="button" onClick={onSave || onClose}>{saveLabel}</button>
     </div>
