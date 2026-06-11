@@ -1,7 +1,8 @@
 /* ─── Sidebar ──────────────────────────────────────────────── */
 .sidebar {
   position: sticky;
-  top: var(--s-7);
+  /* clear the sticky header (its padded height) plus the usual top gap */
+  top: calc(var(--s-7) + var(--head-h));
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-3);
