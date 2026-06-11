@@ -265,6 +265,13 @@ function autoGrowNote(el) {
 
 function NotesSection() {
   const [adding, setAdding] = React.useState(false);
+  // Two-step note delete: first click arms (button turns red), second deletes.
+  const [armedId, setArmedId] = React.useState(null);
+  React.useEffect(() => {
+    if (armedId == null) return;
+    const t = setTimeout(() => setArmedId(null), 4000);
+    return () => clearTimeout(t);
+  }, [armedId]);
   const notes = DMain.NOTES || [];
 
   const commitEdit = (note, value) => {
@@ -301,9 +308,11 @@ function NotesSection() {
                 onBlur={(e) => commitEdit(n, e.target.value)}
                 onKeyDown={onKey}
               />
-              <button className="note-del" type="button" title="Delete note" aria-label="Delete note"
+              <button className={"note-del" + (armedId === n.id ? " armed" : "")} type="button"
+                title={armedId === n.id ? "Click again to delete" : "Delete note"}
+                aria-label={armedId === n.id ? "Confirm delete note" : "Delete note"}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => DMain.deleteNote(n.id)}>
+                onClick={() => (armedId === n.id ? DMain.deleteNote(n.id) : setArmedId(n.id))}>
                 <IconN.X />
               </button>
             </div>
